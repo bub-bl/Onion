@@ -401,11 +401,12 @@ mod tests {
 
     #[test]
     fn let_statements() {
-        let input = "let x = 5;\
-             let y = 10;\
-             let foobar = 838383;\
-             let boo = true;\
-            "
+        let input = "\
+        let x = 5;\
+        let y = 10;\
+        let foobar = 838383;\
+        let boo = true;\
+        "
         .as_bytes();
 
         let program: Program = vec![
@@ -432,7 +433,8 @@ mod tests {
 
     #[test]
     fn prop_statements() {
-        let input = "main_title: \"A big text\";\
+        let input = "\
+        main_title: \"A big text\";\
         age: 75;\
         is_active: true;\
         is_alive: false;\
@@ -463,9 +465,13 @@ mod tests {
 
     #[test]
     fn component_statement() {
-        let input = "button {\
-        text: \"Hey\";\
-        href: \"https://google.com\";\
+        let input = "\
+        button {\
+            text: \"Hey\";\
+            href: \"https://google.com\";\
+            content {\
+                width: 100;
+            }\
         }\
         "
         .as_bytes();
@@ -481,6 +487,13 @@ mod tests {
                     Ident("href".to_owned()),
                     Expression::Literal(Literal::StringLiteral("https://google.com".to_owned())),
                 ),
+                Statement::Component {
+                    ident: Ident("content".to_owned()),
+                    body: vec![Statement::Prop(
+                        Ident("width".to_owned()),
+                        Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(100))),
+                    )],
+                },
             ],
         }];
 
