@@ -6,7 +6,7 @@ pub type Program = Vec<Statement>;
 pub enum Statement {
     Let(Ident, Expression),
     Prop(Ident, Expression),
-    Component(Ident, Box<Statement>),
+    Component { ident: Ident, body: Program },
     Return(Expression),
     Expression(Expression),
 }

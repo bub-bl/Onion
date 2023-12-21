@@ -126,14 +126,11 @@ fn parse_prop_stmt(input: Tokens) -> IResult<Tokens, Statement> {
 
 fn parse_component_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     map(
-        tuple((
-            parse_ident,
-            lbrace_tag,
-            parse_stmt,
-            rbrace_tag,
-            opt(semicolon_tag),
-        )),
-        |(ident, _, expr, _, _)| Statement::Component(ident, Box::new(expr)),
+        tuple((parse_ident, parse_block_stmt, opt(semicolon_tag))),
+        |(ident, program, _)| Statement::Component {
+            ident,
+            body: program,
+        },
     )(input)
 }
 
@@ -468,29 +465,24 @@ mod tests {
     fn component_statement() {
         let input = "button {\
         text: \"Hey\";\
-        }\
-        label {\
         href: \"https://google.com\";\
         }\
         "
         .as_bytes();
 
-        let program: Program = vec![
-            Statement::Component(
-                Ident("button".to_owned()),
-                Box::new(Statement::Prop(
+        let program: Program = vec![Statement::Component {
+            ident: Ident("button".to_owned()),
+            body: vec![
+                Statement::Prop(
                     Ident("text".to_owned()),
                     Expression::Literal(Literal::StringLiteral("Hey".to_owned())),
-                )),
-            ),
-            Statement::Component(
-                Ident("label".to_owned()),
-                Box::new(Statement::Prop(
+                ),
+                Statement::Prop(
                     Ident("href".to_owned()),
                     Expression::Literal(Literal::StringLiteral("https://google.com".to_owned())),
-                )),
-            ),
-        ];
+                ),
+            ],
+        }];
 
         assert_input_with_program(input, program);
     }
