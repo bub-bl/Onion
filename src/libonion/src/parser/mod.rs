@@ -502,4 +502,51 @@ mod tests {
 
         assert_input_with_program(input, program);
     }
+
+    #[test]
+    fn op_precedence() {
+        let input = "!-a".as_bytes();
+        let input2 = "(!(-a))".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "a + b + c".as_bytes();
+        let input2 = "((a + b) + c)".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "a + b - c".as_bytes();
+        let input2 = "((a + b) - c)".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "a * b * c".as_bytes();
+        let input2 = "((a * b) * c)".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "a * b / c".as_bytes();
+        let input2 = "((a * b) / c)".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "a + b / c".as_bytes();
+        let input2 = "(a + (b / c))".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "a + b * c + d / e - f".as_bytes();
+        let input2 = "(((a + (b * c)) + (d / e)) - f)".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "3 + 4; -5 * 5".as_bytes();
+        let input2 = "(3 + 4);((-5) * 5)".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "5 > 4 == 3 < 4".as_bytes();
+        let input2 = "((5 > 4) == (3 < 4))".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "5 < 4 != 3 > 4".as_bytes();
+        let input2 = "((5 < 4) != (3 > 4))".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "3 + 4 * 5 == 3 * 1 + 4 * 5".as_bytes();
+        let input2 = "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))".as_bytes();
+        compare_inputs(input, input2);
+    }
 }
