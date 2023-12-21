@@ -1,0 +1,15 @@
+[package]
+name = "interpreter"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "onion"
+path = "src/main.rs"
+
+[dependencies]
+clap = "4.4.11"
+rustyline = "13.0.0"
+rustyline-derive = "0.10.0"
+
+libonion = { path = "../libonion" }

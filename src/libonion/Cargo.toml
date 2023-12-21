@@ -1,0 +1,11 @@
+[package]
+name = "libonion"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "libonion"
+path = "src/lib.rs"
+
+[dependencies]
+nom = "7.1.3"
