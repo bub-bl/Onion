@@ -97,6 +97,7 @@ fn parse_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     alt((
         parse_let_stmt,
         parse_prop_stmt,
+        parse_component_stmt,
         parse_return_stmt,
         parse_expr_stmt,
     ))(input)
@@ -120,6 +121,19 @@ fn parse_prop_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     map(
         tuple((parse_ident, colon_tag, parse_expr, opt(semicolon_tag))),
         |(ident, _, expr, _)| Statement::Prop(ident, expr),
+    )(input)
+}
+
+fn parse_component_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    map(
+        tuple((
+            parse_ident,
+            lbrace_tag,
+            parse_stmt,
+            rbrace_tag,
+            opt(semicolon_tag),
+        )),
+        |(ident, _, expr, _, _)| Statement::Component(ident, Box::new(expr)),
     )(input)
 }
 
@@ -369,6 +383,20 @@ mod tests {
         assert_eq!(result, expected_results);
     }
 
+    fn assert_infix(input: &[u8], infix: Infix) {
+        let program: Program = vec![Statement::Expression(Expression::Infix(
+            infix,
+            Box::new(Expression::Literal(Literal::NumberLiteral(
+                Number::UnsignedInteger(10),
+            ))),
+            Box::new(Expression::Literal(Literal::NumberLiteral(
+                Number::UnsignedInteger(20),
+            ))),
+        ))];
+
+        assert_input_with_program(input, program);
+    }
+
     #[test]
     fn empty() {
         assert_input_with_program(&b""[..], vec![]);
@@ -436,16 +464,33 @@ mod tests {
         assert_input_with_program(input, program);
     }
 
-    fn assert_infix(input: &[u8], infix: Infix) {
-        let program: Program = vec![Statement::Expression(Expression::Infix(
-            infix,
-            Box::new(Expression::Literal(Literal::NumberLiteral(
-                Number::UnsignedInteger(10),
-            ))),
-            Box::new(Expression::Literal(Literal::NumberLiteral(
-                Number::UnsignedInteger(20),
-            ))),
-        ))];
+    #[test]
+    fn component_statement() {
+        let input = "button {\
+        text: \"Hey\";\
+        }\
+        label {\
+        href: \"https://google.com\";\
+        }\
+        "
+        .as_bytes();
+
+        let program: Program = vec![
+            Statement::Component(
+                Ident("button".to_owned()),
+                Box::new(Statement::Prop(
+                    Ident("text".to_owned()),
+                    Expression::Literal(Literal::StringLiteral("Hey".to_owned())),
+                )),
+            ),
+            Statement::Component(
+                Ident("label".to_owned()),
+                Box::new(Statement::Prop(
+                    Ident("href".to_owned()),
+                    Expression::Literal(Literal::StringLiteral("https://google.com".to_owned())),
+                )),
+            ),
+        ];
 
         assert_input_with_program(input, program);
     }
