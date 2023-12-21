@@ -212,4 +212,40 @@ mod tests {
 
         assert_eq!(result, expected_results);
     }
+
+    #[test]
+    fn empty() {
+        assert_input_with_program(&b""[..], vec![]);
+    }
+
+    #[test]
+    fn let_statements() {
+        let input = "let x = 5;\
+             let y = 10;\
+             let foobar = 838383;\
+             let boo = true;\
+            "
+        .as_bytes();
+
+        let program: Program = vec![
+            Statement::Let(
+                Ident("x".to_owned()),
+                Expression::Literal(Literal::IntLiteral(5)),
+            ),
+            Statement::Let(
+                Ident("y".to_owned()),
+                Expression::Literal(Literal::IntLiteral(10)),
+            ),
+            Statement::Let(
+                Ident("foobar".to_owned()),
+                Expression::Literal(Literal::IntLiteral(838383)),
+            ),
+            Statement::Let(
+                Ident("boo".to_owned()),
+                Expression::Literal(Literal::BoolLiteral(true)),
+            ),
+        ];
+
+        assert_input_with_program(input, program);
+    }
 }
