@@ -467,41 +467,39 @@ mod tests {
         let input = "10 % 20".as_bytes();
         assert_infix(input, Infix::Modulo);
 
-        // let input = "10 + 5 / -20 - (x + x)".as_bytes();
-        //
-        // let input2 = "10 + (5 / (-20)) - (x + x)".as_bytes();
-        //
-        // compare_inputs(input, input2);
-        //
-        // let input = "10 + 5 / -20 - (x + x)".as_bytes();
-        //
-        // let program: Program = vec![Statement::Expression(Expression::Infix(
-        //     Infix::Minus,
-        //     Box::new(Expression::Infix(
-        //         Infix::Plus,
-        //         Box::new(Expression::Literal(Literal::NumberLiteral(
-        //             Number::UnsignedInteger(10),
-        //         ))),
-        //         Box::new(Expression::Infix(
-        //             Infix::Divide,
-        //             Box::new(Expression::Literal(Literal::NumberLiteral(
-        //                 Number::UnsignedInteger(10),
-        //             ))),
-        //             Box::new(Expression::Prefix(
-        //                 Prefix::PrefixMinus,
-        //                 Box::new(Expression::Literal(Literal::NumberLiteral(
-        //                     Number::UnsignedInteger(20),
-        //                 ))),
-        //             )),
-        //         )),
-        //     )),
-        //     Box::new(Expression::Infix(
-        //         Infix::Plus,
-        //         Box::new(Expression::Identifier(Ident("x".to_owned()))),
-        //         Box::new(Expression::Identifier(Ident("x".to_owned()))),
-        //     )),
-        // ))];
-        //
-        // assert_input_with_program(input, program);
+        let input = "10 + 5 / -20 - (x + x)".as_bytes();
+        let input2 = "10 + (5 / (-20)) - (x + x)".as_bytes();
+        compare_inputs(input, input2);
+
+        let input = "10 + 5 / -20 - (x + x)".as_bytes();
+
+        let program: Program = vec![Statement::Expression(Expression::Infix(
+            Infix::Minus,
+            Box::new(Expression::Infix(
+                Infix::Plus,
+                Box::new(Expression::Literal(Literal::NumberLiteral(
+                    Number::UnsignedInteger(10),
+                ))),
+                Box::new(Expression::Infix(
+                    Infix::Divide,
+                    Box::new(Expression::Literal(Literal::NumberLiteral(
+                        Number::UnsignedInteger(5),
+                    ))),
+                    Box::new(Expression::Prefix(
+                        Prefix::PrefixMinus,
+                        Box::new(Expression::Literal(Literal::NumberLiteral(
+                            Number::UnsignedInteger(20),
+                        ))),
+                    )),
+                )),
+            )),
+            Box::new(Expression::Infix(
+                Infix::Plus,
+                Box::new(Expression::Identifier(Ident("x".to_owned()))),
+                Box::new(Expression::Identifier(Ident("x".to_owned()))),
+            )),
+        ))];
+
+        assert_input_with_program(input, program);
     }
 }
