@@ -52,6 +52,7 @@ fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
         Token::Minus => (Precedence::Sum, Some(Infix::Minus)),
         Token::Multiply => (Precedence::Product, Some(Infix::Multiply)),
         Token::Divide => (Precedence::Product, Some(Infix::Divide)),
+        Token::Modulo => (Precedence::Product, Some(Infix::Modulo)),
         Token::LParen => (Precedence::Call, None),
         Token::LBracket => (Precedence::Index, None),
         _ => (Precedence::Lowest, None),
@@ -93,7 +94,12 @@ fn parse_expr(input: Tokens) -> IResult<Tokens, Expression> {
 }
 
 fn parse_stmt(input: Tokens) -> IResult<Tokens, Statement> {
-    alt((parse_let_stmt, parse_return_stmt, parse_expr_stmt))(input)
+    alt((
+        parse_let_stmt,
+        parse_prop_stmt,
+        parse_return_stmt,
+        parse_expr_stmt,
+    ))(input)
 }
 
 fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Statement> {
@@ -106,6 +112,14 @@ fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Statement> {
             opt(semicolon_tag),
         )),
         |(_, ident, _, expr, _)| Statement::Let(ident, expr),
+    )(input)
+}
+
+fn parse_prop_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    // We don't want to deal with semicolon_tag at the end of the statement
+    map(
+        tuple((parse_ident, colon_tag, parse_expr, opt(semicolon_tag))),
+        |(ident, _, expr, _)| Statement::Prop(ident, expr),
     )(input)
 }
 
@@ -133,16 +147,80 @@ fn parse_ident_expr(input: Tokens) -> IResult<Tokens, Expression> {
     map(parse_ident, Expression::Identifier)(input)
 }
 
+fn parse_comma_exprs(input: Tokens) -> IResult<Tokens, Expression> {
+    preceded(comma_tag, parse_expr)(input)
+}
+fn parse_exprs(input: Tokens) -> IResult<Tokens, Vec<Expression>> {
+    map(
+        pair(parse_expr, many0(parse_comma_exprs)),
+        |(first, second)| [&vec![first][..], &second[..]].concat(),
+    )(input)
+}
+fn empty_boxed_vec(input: Tokens) -> IResult<Tokens, Vec<Expression>> {
+    Ok((input, vec![]))
+}
+fn parse_array_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    map(
+        delimited(
+            lbracket_tag,
+            alt((parse_exprs, empty_boxed_vec)),
+            rbracket_tag,
+        ),
+        Expression::Array,
+    )(input)
+}
+fn parse_hash_pair(input: Tokens) -> IResult<Tokens, (Literal, Expression)> {
+    separated_pair(parse_literal, colon_tag, parse_expr)(input)
+}
+fn parse_hash_comma_expr(input: Tokens) -> IResult<Tokens, (Literal, Expression)> {
+    preceded(comma_tag, parse_hash_pair)(input)
+}
+
+fn parse_hash_pairs(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expression)>> {
+    map(
+        pair(parse_hash_pair, many0(parse_hash_comma_expr)),
+        |(first, second)| [&vec![first][..], &second[..]].concat(),
+    )(input)
+}
+fn empty_pairs(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expression)>> {
+    Ok((input, vec![]))
+}
+fn parse_hash_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    map(
+        delimited(lbrace_tag, alt((parse_hash_pairs, empty_pairs)), rbrace_tag),
+        Expression::Hash,
+    )(input)
+}
+
+fn parse_prefix_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    let (i1, t1) = alt((plus_tag, minus_tag, not_tag))(input)?;
+    if t1.tok.is_empty() {
+        Err(Err::Error(error_position!(input, ErrorKind::Tag)))
+    } else {
+        let (i2, e) = parse_atom_expr(i1)?;
+        match t1.tok[0].clone() {
+            Token::Plus => Ok((i2, Expression::Prefix(Prefix::PrefixPlus, Box::new(e)))),
+            Token::Minus => Ok((i2, Expression::Prefix(Prefix::PrefixMinus, Box::new(e)))),
+            Token::Not => Ok((i2, Expression::Prefix(Prefix::Not, Box::new(e)))),
+            _ => Err(Err::Error(error_position!(input, ErrorKind::Tag))),
+        }
+    }
+}
+
+fn parse_block_stmt(input: Tokens) -> IResult<Tokens, Program> {
+    delimited(lbrace_tag, many0(parse_stmt), rbrace_tag)(input)
+}
+
 fn parse_atom_expr(input: Tokens) -> IResult<Tokens, Expression> {
     alt((
         parse_lit_expr,
         parse_ident_expr,
-        // parse_prefix_expr,
+        parse_prefix_expr,
         parse_paren_expr,
-        // parse_array_expr,
-        // parse_hash_expr,
-        // parse_if_expr,
-        // parse_fn_expr,
+        parse_array_expr,
+        parse_hash_expr,
+        parse_if_expr,
+        parse_fn_expr,
     ))(input)
 }
 
@@ -164,21 +242,99 @@ fn go_parse_pratt_expr(
         let preview = &t1.tok[0];
         let p = infix_op(preview);
         match p {
-            // (Precedence::Call, _) if precedence < Precedence::Call => {
-            //     let (i2, left2) = parse_call_expr(input, left)?;
-            //     go_parse_pratt_expr(i2, precedence, left2)
-            // }
-            // (Precedence::Index, _) if precedence < Precedence::Index => {
-            //     let (i2, left2) = parse_index_expr(input, left)?;
-            //     go_parse_pratt_expr(i2, precedence, left2)
-            // }
-            // (ref peek_precedence, _) if precedence < *peek_precedence => {
-            //     let (i2, left2) = parse_infix_expr(input, left)?;
-            //     go_parse_pratt_expr(i2, precedence, left2)
-            // }
+            (Precedence::Call, _) if precedence < Precedence::Call => {
+                let (i2, left2) = parse_call_expr(input, left)?;
+                go_parse_pratt_expr(i2, precedence, left2)
+            }
+            (Precedence::Index, _) if precedence < Precedence::Index => {
+                let (i2, left2) = parse_index_expr(input, left)?;
+                go_parse_pratt_expr(i2, precedence, left2)
+            }
+            (ref peek_precedence, _) if precedence < *peek_precedence => {
+                let (i2, left2) = parse_infix_expr(input, left)?;
+                go_parse_pratt_expr(i2, precedence, left2)
+            }
             _ => Ok((input, left)),
         }
     }
+}
+
+fn parse_infix_expr(input: Tokens, left: Expression) -> IResult<Tokens, Expression> {
+    let (i1, t1) = take(1usize)(input)?;
+    if t1.tok.is_empty() {
+        Err(Err::Error(error_position!(input, ErrorKind::Tag)))
+    } else {
+        let next = &t1.tok[0];
+        let (precedence, maybe_op) = infix_op(next);
+        match maybe_op {
+            None => Err(Err::Error(error_position!(input, ErrorKind::Tag))),
+            Some(op) => {
+                let (i2, right) = parse_pratt_expr(i1, precedence)?;
+                Ok((i2, Expression::Infix(op, Box::new(left), Box::new(right))))
+            }
+        }
+    }
+}
+
+fn parse_call_expr(input: Tokens, fn_handle: Expression) -> IResult<Tokens, Expression> {
+    map(
+        delimited(lparen_tag, alt((parse_exprs, empty_boxed_vec)), rparen_tag),
+        |e| Expression::Call {
+            function: Box::new(fn_handle.clone()),
+            arguments: e,
+        },
+    )(input)
+}
+
+fn parse_index_expr(input: Tokens, arr: Expression) -> IResult<Tokens, Expression> {
+    map(delimited(lbracket_tag, parse_expr, rbracket_tag), |idx| {
+        Expression::Index {
+            array: Box::new(arr.clone()),
+            index: Box::new(idx),
+        }
+    })(input)
+}
+
+fn parse_if_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    map(
+        tuple((
+            if_tag,
+            lparen_tag,
+            parse_expr,
+            rparen_tag,
+            parse_block_stmt,
+            parse_else_expr,
+        )),
+        |(_, _, expr, _, c, a)| Expression::If {
+            cond: Box::new(expr),
+            consequence: c,
+            alternative: a,
+        },
+    )(input)
+}
+fn parse_else_expr(input: Tokens) -> IResult<Tokens, Option<Program>> {
+    opt(preceded(else_tag, parse_block_stmt))(input)
+}
+fn empty_params(input: Tokens) -> IResult<Tokens, Vec<Ident>> {
+    Ok((input, vec![]))
+}
+fn parse_fn_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    map(
+        tuple((
+            function_tag,
+            lparen_tag,
+            alt((parse_params, empty_params)),
+            rparen_tag,
+            parse_block_stmt,
+        )),
+        |(_, _, p, _, b)| Expression::Fn { params: p, body: b },
+    )(input)
+}
+fn parse_params(input: Tokens) -> IResult<Tokens, Vec<Ident>> {
+    map(
+        pair(parse_ident, many0(preceded(comma_tag, parse_ident))),
+        |(p, ps)| [&vec![p][..], &ps[..]].concat(),
+    )(input)
 }
 
 pub struct Parser;
@@ -247,5 +403,105 @@ mod tests {
         ];
 
         assert_input_with_program(input, program);
+    }
+
+    #[test]
+    fn prop_statements() {
+        let input = "main_title: \"A big text\";\
+        age: 75;\
+        is_active: true;\
+        is_alive: false;\
+        "
+        .as_bytes();
+
+        let program: Program = vec![
+            Statement::Prop(
+                Ident("main_title".to_owned()),
+                Expression::Literal(Literal::StringLiteral("A big text".to_owned())),
+            ),
+            Statement::Prop(
+                Ident("age".to_owned()),
+                Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(75))),
+            ),
+            Statement::Prop(
+                Ident("is_active".to_owned()),
+                Expression::Literal(Literal::BoolLiteral(true)),
+            ),
+            Statement::Prop(
+                Ident("is_alive".to_owned()),
+                Expression::Literal(Literal::BoolLiteral(false)),
+            ),
+        ];
+
+        assert_input_with_program(input, program);
+    }
+
+    fn assert_infix(input: &[u8], infix: Infix) {
+        let program: Program = vec![Statement::Expression(Expression::Infix(
+            infix,
+            Box::new(Expression::Literal(Literal::NumberLiteral(
+                Number::UnsignedInteger(10),
+            ))),
+            Box::new(Expression::Literal(Literal::NumberLiteral(
+                Number::UnsignedInteger(20),
+            ))),
+        ))];
+
+        assert_input_with_program(input, program);
+    }
+
+    #[test]
+    fn infix_expr() {
+        let input = "10 + 20".as_bytes();
+        assert_infix(input, Infix::Plus);
+
+        let input = "10 * 20".as_bytes();
+        assert_infix(input, Infix::Multiply);
+
+        let input = "10 - 20".as_bytes();
+        assert_infix(input, Infix::Minus);
+
+        let input = "10 / 20".as_bytes();
+        assert_infix(input, Infix::Divide);
+
+        let input = "10 % 20".as_bytes();
+        assert_infix(input, Infix::Modulo);
+
+        // let input = "10 + 5 / -20 - (x + x)".as_bytes();
+        //
+        // let input2 = "10 + (5 / (-20)) - (x + x)".as_bytes();
+        //
+        // compare_inputs(input, input2);
+        //
+        // let input = "10 + 5 / -20 - (x + x)".as_bytes();
+        //
+        // let program: Program = vec![Statement::Expression(Expression::Infix(
+        //     Infix::Minus,
+        //     Box::new(Expression::Infix(
+        //         Infix::Plus,
+        //         Box::new(Expression::Literal(Literal::NumberLiteral(
+        //             Number::UnsignedInteger(10),
+        //         ))),
+        //         Box::new(Expression::Infix(
+        //             Infix::Divide,
+        //             Box::new(Expression::Literal(Literal::NumberLiteral(
+        //                 Number::UnsignedInteger(10),
+        //             ))),
+        //             Box::new(Expression::Prefix(
+        //                 Prefix::PrefixMinus,
+        //                 Box::new(Expression::Literal(Literal::NumberLiteral(
+        //                     Number::UnsignedInteger(20),
+        //                 ))),
+        //             )),
+        //         )),
+        //     )),
+        //     Box::new(Expression::Infix(
+        //         Infix::Plus,
+        //         Box::new(Expression::Identifier(Ident("x".to_owned()))),
+        //         Box::new(Expression::Identifier(Ident("x".to_owned()))),
+        //     )),
+        // ))];
+        //
+        // assert_input_with_program(input, program);
     }
 }

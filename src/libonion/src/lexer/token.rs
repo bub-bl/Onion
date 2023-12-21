@@ -24,6 +24,7 @@ pub enum Token {
     Minus,
     Divide,
     Multiply,
+    Modulo,
     Equal,
     NotEqual,
     GreaterThanEqual,

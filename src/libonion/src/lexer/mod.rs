@@ -28,6 +28,7 @@ syntax! {plus_operator, "+", Token::Plus}
 syntax! {minus_operator, "-", Token::Minus}
 syntax! {multiply_operator, "*", Token::Multiply}
 syntax! {divide_operator, "/", Token::Divide}
+syntax! {modulo_operator, "%", Token::Modulo}
 syntax! {not_operator, "!", Token::Not}
 syntax! {greater_operator_equal, ">=", Token::GreaterThanEqual}
 syntax! {lesser_operator_equal, "<=", Token::LessThanEqual}
@@ -147,6 +148,7 @@ mod parsing {
             minus_operator,
             multiply_operator,
             divide_operator,
+            modulo_operator,
             not_operator,
             greater_operator_equal,
             lesser_operator_equal,

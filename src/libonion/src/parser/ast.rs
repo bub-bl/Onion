@@ -5,6 +5,7 @@ pub type Program = Vec<Statement>;
 #[derive(PartialEq, Debug, Clone)]
 pub enum Statement {
     Let(Ident, Expression),
+    Prop(Ident, Expression),
     Return(Expression),
     Expression(Expression),
 }
@@ -59,6 +60,7 @@ pub enum Infix {
     Minus,
     Divide,
     Multiply,
+    Modulo,
     Equal,
     NotEqual,
     GreaterThanEqual,
