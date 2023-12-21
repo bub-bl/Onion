@@ -1,6 +1,7 @@
 use nom::*;
 use std::iter::Enumerate;
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
+use std::str::FromStr;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Token {
@@ -10,7 +11,7 @@ pub enum Token {
     // Identifiers and literals
     Ident(String),
     StringLiteral(String),
-    IntLiteral(i64),
+    NumberLiteral(Number),
     BoolLiteral(bool),
 
     // Statements
@@ -46,6 +47,31 @@ pub enum Token {
     RBrace,
     LBracket,
     RBracket,
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum Number {
+    UnsignedInteger(u64),
+    SignedInteger(i64),
+    Float(f64),
+}
+
+impl FromStr for Number {
+    type Err = ();
+
+    // Try to parse number to unsigned integer, signed integer or float
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.parse::<u64>() {
+            Ok(u) => Ok(Number::UnsignedInteger(u)),
+            Err(_) => match s.parse::<i64>() {
+                Ok(i) => Ok(Number::SignedInteger(i)),
+                Err(_) => match s.parse::<f64>() {
+                    Ok(f) => Ok(Number::Float(f)),
+                    Err(_) => Err(()),
+                },
+            },
+        }
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]

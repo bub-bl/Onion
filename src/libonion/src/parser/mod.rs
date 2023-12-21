@@ -64,7 +64,7 @@ fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
         Err(Err::Error(Error::new(input, ErrorKind::Tag)))
     } else {
         match t1.tok[0].clone() {
-            Token::IntLiteral(name) => Ok((i1, Literal::IntLiteral(name))),
+            Token::NumberLiteral(name) => Ok((i1, Literal::NumberLiteral(name))),
             Token::StringLiteral(s) => Ok((i1, Literal::StringLiteral(s))),
             Token::BoolLiteral(b) => Ok((i1, Literal::BoolLiteral(b))),
             _ => Err(Err::Error(Error::new(input, ErrorKind::Tag))),
@@ -230,15 +230,15 @@ mod tests {
         let program: Program = vec![
             Statement::Let(
                 Ident("x".to_owned()),
-                Expression::Literal(Literal::IntLiteral(5)),
+                Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(5))),
             ),
             Statement::Let(
                 Ident("y".to_owned()),
-                Expression::Literal(Literal::IntLiteral(10)),
+                Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(10))),
             ),
             Statement::Let(
                 Ident("foobar".to_owned()),
-                Expression::Literal(Literal::IntLiteral(838383)),
+                Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(838383))),
             ),
             Statement::Let(
                 Ident("boo".to_owned()),

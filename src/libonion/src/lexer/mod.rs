@@ -94,7 +94,7 @@ mod parsing {
                 map_res(digit1, complete_byte_slice_str_from_utf8),
                 complete_str_from_str,
             ),
-            Token::IntLiteral,
+            Token::NumberLiteral,
         )(input)
     }
 

@@ -1,3 +1,5 @@
+use crate::lexer::token::Number;
+
 pub type Program = Vec<Statement>;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -36,7 +38,7 @@ pub enum Expression {
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Literal {
-    IntLiteral(i64),
+    NumberLiteral(Number),
     BoolLiteral(bool),
     StringLiteral(String),
 }
