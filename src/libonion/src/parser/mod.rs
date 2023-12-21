@@ -40,6 +40,24 @@ tag_token!(else_tag, Token::Else);
 tag_token!(function_tag, Token::Function);
 tag_token!(eof_tag, Token::EOF);
 
+fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
+    match *t {
+        Token::Equal => (Precedence::Equals, Some(Infix::Equal)),
+        Token::NotEqual => (Precedence::Equals, Some(Infix::NotEqual)),
+        Token::LessThanEqual => (Precedence::LessGreater, Some(Infix::LessThanEqual)),
+        Token::GreaterThanEqual => (Precedence::LessGreater, Some(Infix::GreaterThanEqual)),
+        Token::LessThan => (Precedence::LessGreater, Some(Infix::LessThan)),
+        Token::GreaterThan => (Precedence::LessGreater, Some(Infix::GreaterThan)),
+        Token::Plus => (Precedence::Sum, Some(Infix::Plus)),
+        Token::Minus => (Precedence::Sum, Some(Infix::Minus)),
+        Token::Multiply => (Precedence::Product, Some(Infix::Multiply)),
+        Token::Divide => (Precedence::Product, Some(Infix::Divide)),
+        Token::LParen => (Precedence::Call, None),
+        Token::LBracket => (Precedence::Index, None),
+        _ => (Precedence::Lowest, None),
+    }
+}
+
 fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
     let (i1, t1) = take(1usize)(input)?;
     if t1.tok.is_empty() {
@@ -63,5 +81,110 @@ fn parse_ident(input: Tokens) -> IResult<Tokens, Ident> {
             Token::Ident(name) => Ok((i1, Ident(name))),
             _ => Err(Err::Error(Error::new(input, ErrorKind::Tag))),
         }
+    }
+}
+
+fn parse_program(input: Tokens) -> IResult<Tokens, Program> {
+    terminated(many0(parse_stmt), eof_tag)(input)
+}
+
+fn parse_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    parse_pratt_expr(input, Precedence::Lowest)
+}
+
+fn parse_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    alt((parse_let_stmt, parse_return_stmt, parse_expr_stmt))(input)
+}
+
+fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    map(
+        tuple((
+            let_tag,
+            parse_ident,
+            assign_tag,
+            parse_expr,
+            opt(semicolon_tag),
+        )),
+        |(_, ident, _, expr, _)| Statement::Let(ident, expr),
+    )(input)
+}
+
+fn parse_return_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    map(
+        delimited(return_tag, parse_expr, opt(semicolon_tag)),
+        Statement::Return,
+    )(input)
+}
+
+fn parse_expr_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    map(terminated(parse_expr, opt(semicolon_tag)), |expr| {
+        Statement::Expression(expr)
+    })(input)
+}
+
+fn parse_paren_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    delimited(lparen_tag, parse_expr, rparen_tag)(input)
+}
+
+fn parse_lit_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    map(parse_literal, Expression::Literal)(input)
+}
+fn parse_ident_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    map(parse_ident, Expression::Identifier)(input)
+}
+
+fn parse_atom_expr(input: Tokens) -> IResult<Tokens, Expression> {
+    alt((
+        parse_lit_expr,
+        parse_ident_expr,
+        // parse_prefix_expr,
+        parse_paren_expr,
+        // parse_array_expr,
+        // parse_hash_expr,
+        // parse_if_expr,
+        // parse_fn_expr,
+    ))(input)
+}
+
+fn parse_pratt_expr(input: Tokens, precedence: Precedence) -> IResult<Tokens, Expression> {
+    let (i1, left) = parse_atom_expr(input)?;
+    go_parse_pratt_expr(i1, precedence, left)
+}
+
+fn go_parse_pratt_expr(
+    input: Tokens,
+    precedence: Precedence,
+    left: Expression,
+) -> IResult<Tokens, Expression> {
+    let (i1, t1) = take(1usize)(input)?;
+
+    if t1.tok.is_empty() {
+        Ok((i1, left))
+    } else {
+        let preview = &t1.tok[0];
+        let p = infix_op(preview);
+        match p {
+            // (Precedence::Call, _) if precedence < Precedence::Call => {
+            //     let (i2, left2) = parse_call_expr(input, left)?;
+            //     go_parse_pratt_expr(i2, precedence, left2)
+            // }
+            // (Precedence::Index, _) if precedence < Precedence::Index => {
+            //     let (i2, left2) = parse_index_expr(input, left)?;
+            //     go_parse_pratt_expr(i2, precedence, left2)
+            // }
+            // (ref peek_precedence, _) if precedence < *peek_precedence => {
+            //     let (i2, left2) = parse_infix_expr(input, left)?;
+            //     go_parse_pratt_expr(i2, precedence, left2)
+            // }
+            _ => Ok((input, left)),
+        }
+    }
+}
+
+pub struct Parser;
+
+impl Parser {
+    pub fn parse_tokens(tokens: Tokens) -> IResult<Tokens, Program> {
+        parse_program(tokens)
     }
 }
