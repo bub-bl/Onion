@@ -49,31 +49,6 @@ pub enum Token {
     RBracket,
 }
 
-#[derive(Clone, PartialEq, Debug)]
-pub enum Number {
-    UnsignedInteger(u64),
-    SignedInteger(i64),
-    Float(f64),
-}
-
-impl FromStr for Number {
-    type Err = ();
-
-    // Try to parse number to unsigned integer, signed integer or float
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.parse::<u64>() {
-            Ok(u) => Ok(Number::UnsignedInteger(u)),
-            Err(_) => match s.parse::<i64>() {
-                Ok(i) => Ok(Number::SignedInteger(i)),
-                Err(_) => match s.parse::<f64>() {
-                    Ok(f) => Ok(Number::Float(f)),
-                    Err(_) => Err(()),
-                },
-            },
-        }
-    }
-}
-
 #[derive(Clone, Copy, PartialEq, Debug)]
 #[repr(C)]
 pub struct Tokens<'a> {
@@ -195,6 +170,31 @@ impl<'a> InputIter for Tokens<'a> {
             Ok(count)
         } else {
             Err(Needed::Unknown)
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum Number {
+    UnsignedInteger(u64),
+    SignedInteger(i64),
+    Float(f64),
+}
+
+impl FromStr for Number {
+    type Err = ();
+
+    // Try to parse number to unsigned integer, signed integer or float
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.parse::<u64>() {
+            Ok(u) => Ok(Number::UnsignedInteger(u)),
+            Err(_) => match s.parse::<i64>() {
+                Ok(i) => Ok(Number::SignedInteger(i)),
+                Err(_) => match s.parse::<f64>() {
+                    Ok(f) => Ok(Number::Float(f)),
+                    Err(_) => Err(()),
+                },
+            },
         }
     }
 }
