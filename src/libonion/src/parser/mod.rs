@@ -188,3 +188,28 @@ impl Parser {
         parse_program(tokens)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::lexer::*;
+
+    fn assert_input_with_program(input: &[u8], expected_results: Program) {
+        let (_, r) = Lexer::lex_tokens(input).unwrap();
+        let tokens = Tokens::new(&r);
+        let (_, result) = Parser::parse_tokens(tokens).unwrap();
+        assert_eq!(result, expected_results);
+    }
+
+    fn compare_inputs(input: &[u8], input2: &[u8]) {
+        let (_, r) = Lexer::lex_tokens(input).unwrap();
+        let tokens = Tokens::new(&r);
+        let (_, result) = Parser::parse_tokens(tokens).unwrap();
+
+        let (_, r) = Lexer::lex_tokens(input2).unwrap();
+        let tokens = Tokens::new(&r);
+        let (_, expected_results) = Parser::parse_tokens(tokens).unwrap();
+
+        assert_eq!(result, expected_results);
+    }
+}
