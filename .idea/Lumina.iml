@@ -8,6 +8,8 @@
       <sourceFolder url="file://$MODULE_DIR$/src/lumina_interpreter/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/interpreter/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/src/libonion/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/wasm/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/wasm/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/examples/simple_component/target" />
       <excludeFolder url="file://$MODULE_DIR$/src/target" />
     </content>

@@ -6,8 +6,7 @@ use nom::multi::many0;
 use nom::sequence::{delimited, pair};
 use nom::*;
 
-use std::str;
-use std::str::{FromStr, Utf8Error};
+use std::str::FromStr;
 
 pub mod token;
 use crate::lexer::token::*;

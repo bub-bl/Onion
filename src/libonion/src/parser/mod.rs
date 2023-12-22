@@ -3,9 +3,10 @@ use nom::*;
 pub mod ast;
 use crate::lexer::token::*;
 use crate::parser::ast::*;
+use crate::styles::style::Style;
 use nom::branch::*;
 use nom::bytes::complete::take;
-use nom::combinator::{map, opt, verify};
+use nom::combinator::{map, map_res, opt, verify};
 use nom::error::{Error, ErrorKind};
 use nom::multi::many0;
 use nom::sequence::*;
@@ -40,6 +41,8 @@ tag_token!(else_tag, Token::Else);
 tag_token!(function_tag, Token::Function);
 tag_token!(eof_tag, Token::EOF);
 
+tag_token!(width_prop_tag, Token::EOF);
+
 fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
     match *t {
         Token::Equal => (Precedence::Equals, Some(Infix::Equal)),
@@ -61,6 +64,7 @@ fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
 
 fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
     let (i1, t1) = take(1usize)(input)?;
+
     if t1.tok.is_empty() {
         Err(Err::Error(Error::new(input, ErrorKind::Tag)))
     } else {
@@ -68,6 +72,7 @@ fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
             Token::NumberLiteral(name) => Ok((i1, Literal::NumberLiteral(name))),
             Token::StringLiteral(s) => Ok((i1, Literal::StringLiteral(s))),
             Token::BoolLiteral(b) => Ok((i1, Literal::BoolLiteral(b))),
+            Token::ColorLiteral(c) => Ok((i1, Literal::ColorLiteral(c))),
             _ => Err(Err::Error(Error::new(input, ErrorKind::Tag))),
         }
     }
@@ -75,6 +80,7 @@ fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
 
 fn parse_ident(input: Tokens) -> IResult<Tokens, Ident> {
     let (i1, t1) = take(1usize)(input)?;
+
     if t1.tok.is_empty() {
         Err(Err::Error(Error::new(input, ErrorKind::Tag)))
     } else {
@@ -104,6 +110,7 @@ fn parse_stmt(input: Tokens) -> IResult<Tokens, Statement> {
 }
 
 fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    // TODO - We don't want to deal with semicolon_tag at the end of the statement
     map(
         tuple((
             let_tag,
@@ -117,7 +124,7 @@ fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Statement> {
 }
 
 fn parse_prop_stmt(input: Tokens) -> IResult<Tokens, Statement> {
-    // We don't want to deal with semicolon_tag at the end of the statement
+    // TODO - We don't want to deal with semicolon_tag at the end of the statement
     map(
         tuple((parse_ident, colon_tag, parse_expr, opt(semicolon_tag))),
         |(ident, _, expr, _)| Statement::Prop(ident, expr),
@@ -154,6 +161,7 @@ fn parse_paren_expr(input: Tokens) -> IResult<Tokens, Expression> {
 fn parse_lit_expr(input: Tokens) -> IResult<Tokens, Expression> {
     map(parse_literal, Expression::Literal)(input)
 }
+
 fn parse_ident_expr(input: Tokens) -> IResult<Tokens, Expression> {
     map(parse_ident, Expression::Identifier)(input)
 }
@@ -161,15 +169,18 @@ fn parse_ident_expr(input: Tokens) -> IResult<Tokens, Expression> {
 fn parse_comma_exprs(input: Tokens) -> IResult<Tokens, Expression> {
     preceded(comma_tag, parse_expr)(input)
 }
+
 fn parse_exprs(input: Tokens) -> IResult<Tokens, Vec<Expression>> {
     map(
         pair(parse_expr, many0(parse_comma_exprs)),
         |(first, second)| [&vec![first][..], &second[..]].concat(),
     )(input)
 }
+
 fn empty_boxed_vec(input: Tokens) -> IResult<Tokens, Vec<Expression>> {
     Ok((input, vec![]))
 }
+
 fn parse_array_expr(input: Tokens) -> IResult<Tokens, Expression> {
     map(
         delimited(
@@ -180,9 +191,11 @@ fn parse_array_expr(input: Tokens) -> IResult<Tokens, Expression> {
         Expression::Array,
     )(input)
 }
+
 fn parse_hash_pair(input: Tokens) -> IResult<Tokens, (Literal, Expression)> {
     separated_pair(parse_literal, colon_tag, parse_expr)(input)
 }
+
 fn parse_hash_comma_expr(input: Tokens) -> IResult<Tokens, (Literal, Expression)> {
     preceded(comma_tag, parse_hash_pair)(input)
 }
@@ -193,9 +206,11 @@ fn parse_hash_pairs(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expression)>
         |(first, second)| [&vec![first][..], &second[..]].concat(),
     )(input)
 }
+
 fn empty_pairs(input: Tokens) -> IResult<Tokens, Vec<(Literal, Expression)>> {
     Ok((input, vec![]))
 }
+
 fn parse_hash_expr(input: Tokens) -> IResult<Tokens, Expression> {
     map(
         delimited(lbrace_tag, alt((parse_hash_pairs, empty_pairs)), rbrace_tag),
@@ -323,12 +338,15 @@ fn parse_if_expr(input: Tokens) -> IResult<Tokens, Expression> {
         },
     )(input)
 }
+
 fn parse_else_expr(input: Tokens) -> IResult<Tokens, Option<Program>> {
     opt(preceded(else_tag, parse_block_stmt))(input)
 }
+
 fn empty_params(input: Tokens) -> IResult<Tokens, Vec<Ident>> {
     Ok((input, vec![]))
 }
+
 fn parse_fn_expr(input: Tokens) -> IResult<Tokens, Expression> {
     map(
         tuple((
@@ -341,6 +359,7 @@ fn parse_fn_expr(input: Tokens) -> IResult<Tokens, Expression> {
         |(_, _, p, _, b)| Expression::Fn { params: p, body: b },
     )(input)
 }
+
 fn parse_params(input: Tokens) -> IResult<Tokens, Vec<Ident>> {
     map(
         pair(parse_ident, many0(preceded(comma_tag, parse_ident))),
@@ -360,6 +379,8 @@ impl Parser {
 mod tests {
     use super::*;
     use crate::lexer::*;
+    use crate::math::numbers::Number;
+    use crate::styles::style::Color;
 
     fn assert_input_with_program(input: &[u8], expected_results: Program) {
         let (_, r) = Lexer::lex_tokens(input).unwrap();
@@ -469,8 +490,9 @@ mod tests {
         button {\
             text: \"Hey\";\
             href: \"https://google.com\";\
-            content {\
-                width: 100;
+            style {\
+                width: 100;\
+                background_color: #FF00FF;
             }\
         }\
         "
@@ -488,11 +510,19 @@ mod tests {
                     Expression::Literal(Literal::StringLiteral("https://google.com".to_owned())),
                 ),
                 Statement::Component {
-                    ident: Ident("content".to_owned()),
-                    body: vec![Statement::Prop(
-                        Ident("width".to_owned()),
-                        Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(100))),
-                    )],
+                    ident: Ident("style".to_owned()),
+                    body: vec![
+                        Statement::Prop(
+                            Ident("width".to_owned()),
+                            Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(
+                                100,
+                            ))),
+                        ),
+                        Statement::Prop(
+                            Ident("background_color".to_owned()),
+                            Expression::Literal(Literal::ColorLiteral("FF00FF".to_owned())),
+                        ),
+                    ],
                 },
             ],
         }];
