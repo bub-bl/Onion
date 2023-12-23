@@ -63,7 +63,8 @@ mod parsing {
 
     use nom::branch::alt;
     use nom::bytes::complete::{tag, take};
-    use nom::character::complete::{alpha1, alphanumeric1, digit1, multispace0};
+    use nom::character::complete::{alpha1, alphanumeric1, digit0, digit1, multispace0};
+    use nom::character::{is_hex_digit, is_oct_digit};
     use nom::combinator::{map, map_res, recognize};
     use nom::multi::many0;
     use nom::sequence::{delimited, pair};

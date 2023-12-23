@@ -1,5 +1,4 @@
 use crate::math::numbers::Number;
-use crate::styles::style::{Color, Style};
 
 pub type Program = Vec<Statement>;
 
@@ -44,7 +43,6 @@ pub enum Literal {
     NumberLiteral(Number),
     BoolLiteral(bool),
     StringLiteral(String),
-    ColorLiteral(Color),
 }
 
 #[derive(PartialEq, Debug, Eq, Clone)]

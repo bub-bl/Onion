@@ -1,5 +1,6 @@
 use crate::math::numbers::Number;
-use crate::styles::style::{Color, Style};
+use crate::parser::ast::Ident;
+use crate::styles::style::Color;
 use nom::*;
 use std::iter::Enumerate;
 use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
@@ -15,7 +16,6 @@ pub enum Token {
     StringLiteral(String),
     NumberLiteral(Number),
     BoolLiteral(bool),
-    ColorLiteral(Color),
 
     // Statements
     Assign,

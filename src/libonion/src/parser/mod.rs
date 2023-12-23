@@ -2,8 +2,8 @@ use nom::*;
 
 pub mod ast;
 use crate::lexer::token::*;
+use crate::math::numbers::Number;
 use crate::parser::ast::*;
-use crate::styles::style::Style;
 use nom::branch::*;
 use nom::bytes::complete::take;
 use nom::combinator::{map, map_res, opt, verify};
@@ -41,8 +41,6 @@ tag_token!(else_tag, Token::Else);
 tag_token!(function_tag, Token::Function);
 tag_token!(eof_tag, Token::EOF);
 
-tag_token!(width_prop_tag, Token::EOF);
-
 fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
     match *t {
         Token::Equal => (Precedence::Equals, Some(Infix::Equal)),
@@ -72,7 +70,6 @@ fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
             Token::NumberLiteral(name) => Ok((i1, Literal::NumberLiteral(name))),
             Token::StringLiteral(s) => Ok((i1, Literal::StringLiteral(s))),
             Token::BoolLiteral(b) => Ok((i1, Literal::BoolLiteral(b))),
-            Token::ColorLiteral(c) => Ok((i1, Literal::ColorLiteral(c))),
             _ => Err(Err::Error(Error::new(input, ErrorKind::Tag))),
         }
     }
@@ -381,6 +378,8 @@ mod tests {
     use crate::lexer::*;
     use crate::math::numbers::Number;
     use crate::styles::style::Color;
+    use crate::styles::style::Color::Rgba;
+    use palette::{Hsla, Srgba};
 
     fn assert_input_with_program(input: &[u8], expected_results: Program) {
         let (_, r) = Lexer::lex_tokens(input).unwrap();
@@ -455,7 +454,6 @@ mod tests {
     #[test]
     fn prop_statements() {
         let input = "\
-        main_title: \"A big text\";\
         age: 75;\
         is_active: true;\
         is_alive: false;\
@@ -463,10 +461,6 @@ mod tests {
         .as_bytes();
 
         let program: Program = vec![
-            Statement::Prop(
-                Ident("main_title".to_owned()),
-                Expression::Literal(Literal::StringLiteral("A big text".to_owned())),
-            ),
             Statement::Prop(
                 Ident("age".to_owned()),
                 Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(75))),
@@ -488,11 +482,10 @@ mod tests {
     fn component_statement() {
         let input = "\
         button {\
-            text: \"Hey\";\
-            href: \"https://google.com\";\
             style {\
-                width: 100;\
-                background_color: #FF00FF;
+                width: px(100);\
+                height: vh(50.0);\
+                visible: true;\
             }\
         }\
         "
@@ -500,31 +493,33 @@ mod tests {
 
         let program: Program = vec![Statement::Component {
             ident: Ident("button".to_owned()),
-            body: vec![
-                Statement::Prop(
-                    Ident("text".to_owned()),
-                    Expression::Literal(Literal::StringLiteral("Hey".to_owned())),
-                ),
-                Statement::Prop(
-                    Ident("href".to_owned()),
-                    Expression::Literal(Literal::StringLiteral("https://google.com".to_owned())),
-                ),
-                Statement::Component {
-                    ident: Ident("style".to_owned()),
-                    body: vec![
-                        Statement::Prop(
-                            Ident("width".to_owned()),
-                            Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(
-                                100,
-                            ))),
-                        ),
-                        Statement::Prop(
-                            Ident("background_color".to_owned()),
-                            Expression::Literal(Literal::ColorLiteral("FF00FF".to_owned())),
-                        ),
-                    ],
-                },
-            ],
+            body: vec![Statement::Component {
+                ident: Ident("style".to_owned()),
+                body: vec![
+                    Statement::Prop(
+                        Ident("width".to_owned()),
+                        Expression::Call {
+                            function: Box::new(Expression::Identifier(Ident("px".to_owned()))),
+                            arguments: vec![Expression::Literal(Literal::NumberLiteral(
+                                Number::UnsignedInteger(100),
+                            ))],
+                        },
+                    ),
+                    Statement::Prop(
+                        Ident("height".to_owned()),
+                        Expression::Call {
+                            function: Box::new(Expression::Identifier(Ident("vh".to_owned()))),
+                            arguments: vec![Expression::Literal(Literal::NumberLiteral(
+                                Number::Float(50f64),
+                            ))],
+                        },
+                    ),
+                    Statement::Prop(
+                        Ident("visible".to_owned()),
+                        Expression::Literal(Literal::BoolLiteral(true)),
+                    ),
+                ],
+            }],
         }];
 
         assert_input_with_program(input, program);
