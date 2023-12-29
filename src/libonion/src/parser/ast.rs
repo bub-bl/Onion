@@ -4,7 +4,7 @@ pub type Program = Vec<Statement>;
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Statement {
-    Let(Ident, Expression),
+    Let(Ident, Option<Expression>, Expression),
     Prop(Ident, Expression),
     Component { ident: Ident, body: Program },
     NamedBlock { ident: Ident, body: Program },
@@ -15,6 +15,7 @@ pub enum Statement {
 #[derive(PartialEq, Debug, Clone)]
 pub enum Expression {
     Identifier(Ident),
+    Keyword(Ident),
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),

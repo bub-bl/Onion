@@ -42,6 +42,16 @@ tag_token!(if_tag, Token::If);
 tag_token!(else_tag, Token::Else);
 tag_token!(function_tag, Token::Function);
 tag_token!(eof_tag, Token::EOF);
+tag_token!(bind_tag, Token::Bind);
+tag_token!(event_tag, Token::Event);
+tag_token!(use_tag, Token::Use);
+tag_token!(init_tag, Token::Init);
+tag_token!(get_tag, Token::Get);
+tag_token!(set_tag, Token::Set);
+tag_token!(component_tag, Token::Component);
+tag_token!(loop_tag, Token::Loop);
+tag_token!(break_tag, Token::Break);
+tag_token!(next_tag, Token::Next);
 
 fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
     match *t {
@@ -145,18 +155,20 @@ fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Statement> {
         tuple((
             let_tag,
             parse_ident,
+            opt(colon_tag),
+            opt(parse_array_expr),
             assign_tag,
             parse_expr,
             opt(semicolon_tag),
         )),
-        |(_, ident, _, expr, _)| Statement::Let(ident, expr),
+        |(_, ident, _, modifiers, _, expr, _)| Statement::Let(ident, modifiers, expr),
     )(input)
 }
 
 fn parse_prop_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     // TODO - We don't want to deal with semicolon_tag at the end of the statement
     map(
-        tuple((parse_ident, colon_tag, parse_expr, opt(semicolon_tag))),
+        tuple((parse_ident, colon_tag, parse_expr, semicolon_tag)),
         |(ident, _, expr, _)| Statement::Prop(ident, expr),
     )(input)
 }
@@ -475,18 +487,22 @@ mod tests {
         let program: Program = vec![
             Statement::Let(
                 Ident("x".to_owned()),
+                None,
                 Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(5))),
             ),
             Statement::Let(
                 Ident("y".to_owned()),
+                None,
                 Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(10))),
             ),
             Statement::Let(
                 Ident("foobar".to_owned()),
+                None,
                 Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(838383))),
             ),
             Statement::Let(
                 Ident("boo".to_owned()),
+                None,
                 Expression::Literal(Literal::BoolLiteral(true)),
             ),
         ];
@@ -532,6 +548,7 @@ mod tests {
         component Test {\
             let value = \"Hello World!\";
             let color = \"#ff0000\";
+            let age: [enculer, pd] = 26;
 
             render {
                 text {
@@ -548,11 +565,21 @@ mod tests {
                 body: vec![
                     Statement::Let(
                         Ident("value".to_owned()),
+                        None,
                         Expression::Literal(Literal::StringLiteral("Hello World!".to_owned())),
                     ),
                     Statement::Let(
                         Ident("color".to_owned()),
+                        None,
                         Expression::Literal(Literal::StringLiteral("#ff0000".to_owned())),
+                    ),
+                    Statement::Let(
+                        Ident("age".to_owned()),
+                        Some(Expression::Array(vec![
+                            Expression::Identifier(Ident("enculer".to_owned())),
+                            Expression::Identifier(Ident("pd".to_owned())),
+                        ])),
+                        Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(26))),
                     ),
                     Statement::NamedBlock {
                         ident: Ident("render".to_owned()),
