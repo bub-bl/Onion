@@ -6,15 +6,10 @@ pub type Program = Vec<Statement>;
 pub enum Statement {
     Let(Ident, Option<Expression>, Expression),
     Prop(Ident, Expression),
-    Component { ident: Keyword, body: Program },
+    Component { ident: Ident, body: Program },
     NamedBlock { ident: Ident, body: Program },
     Return(Expression),
     Expression(Expression),
-}
-
-#[derive(PartialEq, Debug, Clone)]
-pub enum Keyword {
-    Some(Ident),
 }
 
 #[derive(PartialEq, Debug, Clone)]

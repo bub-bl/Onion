@@ -151,17 +151,29 @@ fn parse_stmt(input: Tokens) -> IResult<Tokens, Statement> {
 
 fn parse_let_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     // TODO - We don't want to deal with semicolon_tag at the end of the statement
+    // let my_var = 26;
+    // or
+    // let my_var: [bind, init] = 26;
     map(
         tuple((
             let_tag,
             parse_ident,
-            opt(colon_tag),
-            opt(parse_array_expr),
-            assign_tag,
-            parse_expr,
-            opt(semicolon_tag),
+            opt(tuple((colon_tag, parse_array_expr))),
+            tuple((assign_tag, parse_expr)),
+            semicolon_tag,
         )),
-        |(_, ident, _, modifiers, _, expr, _)| Statement::Let(ident, modifiers, expr),
+        |(_, ident, modifiers, expr, _)| {
+            let m = match modifiers {
+                Some((_, m)) => Some(m),
+                None => None,
+            };
+
+            let e = match expr {
+                (_, e) => e,
+            };
+
+            Statement::Let(ident, m, e)
+        },
     )(input)
 }
 
@@ -177,7 +189,7 @@ fn parse_component_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     map(
         tuple((parse_component_keyword, parse_ident, parse_block_stmt)),
         |(_, ident, program)| Statement::Component {
-            ident: Keyword::Some(ident),
+            ident,
             body: program,
         },
     )(input)
@@ -561,7 +573,7 @@ mod tests {
 
         let program: Program = vec![
             Statement::Component { 
-                ident: Keyword::Some(Ident("Test".to_owned())),
+                ident: Ident("Test".to_owned()),
                 body: vec![
                     Statement::Let(
                         Ident("value".to_owned()),
