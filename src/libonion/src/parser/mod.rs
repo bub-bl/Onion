@@ -177,7 +177,7 @@ fn parse_component_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     map(
         tuple((parse_component_keyword, parse_ident, parse_block_stmt)),
         |(_, ident, program)| Statement::Component {
-            ident,
+            ident: Keyword::Some(ident),
             body: program,
         },
     )(input)
@@ -561,7 +561,7 @@ mod tests {
 
         let program: Program = vec![
             Statement::Component { 
-                ident: Ident("Test".to_owned()),
+                ident: Keyword::Some(Ident("Test".to_owned())),
                 body: vec![
                     Statement::Let(
                         Ident("value".to_owned()),
