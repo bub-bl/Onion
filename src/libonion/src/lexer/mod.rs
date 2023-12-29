@@ -6,7 +6,10 @@ use nom::multi::many0;
 use nom::sequence::{delimited, pair};
 use nom::*;
 
-use std::str::FromStr;
+use std::str::{FromStr, Utf8Error};
+
+use crate::lexer::byte_slice::*;
+use crate::lexer::parsing::*;
 
 pub mod token;
 use crate::lexer::token::*;
@@ -35,6 +38,7 @@ syntax! {greater_operator, ">", Token::GreaterThan}
 syntax! {lesser_operator, "<", Token::LessThan}
 
 // Punctuations
+syntax! {dot_punctuation, ".", Token::Dot}
 syntax! {comma_punctuation, ",", Token::Comma}
 syntax! {semicolon_punctuation, ";", Token::SemiColon}
 syntax! {colon_punctuation, ":", Token::Colon}
@@ -44,9 +48,6 @@ syntax! {lbrace_punctuation, "{", Token::LBrace}
 syntax! {rbrace_punctuation, "}", Token::RBrace}
 syntax! {lbracket_punctuation, "[", Token::LBracket}
 syntax! {rbracket_punctuation, "]", Token::RBracket}
-
-use crate::lexer::byte_slice::*;
-use crate::lexer::parsing::*;
 
 pub struct Lexer;
 
@@ -60,14 +61,18 @@ impl Lexer {
 mod parsing {
     use crate::lexer::token::Token;
     use crate::lexer::*;
+    use std::borrow::Cow;
 
+    use crate::math::numbers::Number;
+    use crate::parser::ast::Statement;
     use nom::branch::alt;
     use nom::bytes::complete::{tag, take};
-    use nom::character::complete::{alpha1, alphanumeric1, digit0, digit1, multispace0};
+    use nom::character::complete::{alpha1, alphanumeric1, char, digit0, digit1, multispace0};
     use nom::character::{is_hex_digit, is_oct_digit};
-    use nom::combinator::{map, map_res, recognize};
+    use nom::combinator::{complete, map, map_res, opt, recognize};
     use nom::multi::many0;
-    use nom::sequence::{delimited, pair};
+    use nom::number::complete::{float, recognize_float};
+    use nom::sequence::{delimited, pair, preceded, tuple};
     use nom::IResult;
 
     pub(crate) fn lex_tokens(input: &[u8]) -> IResult<&[u8], Vec<Token>> {
@@ -80,7 +85,10 @@ mod parsing {
             lex_punctuations,
             lex_string,
             lex_reserved_ident,
-            lex_integer,
+            // lex_number,
+            // lex_integer_literal,
+            lex_number,
+            // lex_float_literal,
             lex_illegal,
         ))(input)
     }
@@ -89,13 +97,82 @@ mod parsing {
         map(take(1usize), |_| Token::Illegal)(input)
     }
 
-    fn lex_integer(input: &[u8]) -> IResult<&[u8], Token> {
+    // fn lex_number(input: &[u8]) -> IResult<&[u8], Token> {
+    //     alt((lex_float_literal, lex_float_literal))(input)
+    // }
+
+    fn lex_integer_literal(input: &[u8]) -> IResult<&[u8], Token> {
         map(
             map_res(
-                map_res(digit1, complete_byte_slice_str_from_utf8),
+                map_res(digit1, ConvertToUtf8Str::to_utf8_str),
                 complete_str_from_str,
             ),
             Token::NumberLiteral,
+        )(input)
+    }
+
+    fn lex_float_literal(input: &[u8]) -> IResult<&[u8], Token> {
+        map(float, |f| {
+            println!("CONVERT: {:?}", f);
+            Token::NumberLiteral(Number::Float(f as f64))
+        })(input)
+    }
+
+    fn lex_number(input: &[u8]) -> IResult<&[u8], Token> {
+        alt((parse_float, parse_unsigned_integer, parse_integer))(input)
+    }
+
+    fn parse_integer(input: &[u8]) -> IResult<&[u8], Token> {
+        map_res(digit1, |s: &[u8]| {
+            String::from_utf8(s.to_vec())
+                .ok()
+                .and_then(|s| s.parse::<i64>().ok())
+                .map(|n| Token::NumberLiteral(Number::SignedInteger(n)))
+                .ok_or(nom::Err::Error((s, nom::error::ErrorKind::Digit)))
+        })(input)
+    }
+
+    fn parse_unsigned_integer(input: &[u8]) -> IResult<&[u8], Token> {
+        map_res(digit1, |s: &[u8]| {
+            String::from_utf8(s.to_vec())
+                .ok()
+                .and_then(|s| s.parse::<u64>().ok())
+                .map(|n| Token::NumberLiteral(Number::UnsignedInteger(n)))
+                .ok_or(nom::Err::Error((s, nom::error::ErrorKind::Digit)))
+        })(input)
+    }
+
+    fn parse_float(input: &[u8]) -> IResult<&[u8], Token> {
+        let parse_decimal = preceded(char('.'), digit1);
+        let parser = tuple((digit1, opt(parse_decimal)));
+
+        map_res(
+            parser,
+            |(int_part, decimal_part): (&[u8], Option<&[u8]>)| {
+                let int = String::from_utf8_lossy(int_part);
+                let decimal = decimal_part
+                    .map(|d| String::from_utf8_lossy(d))
+                    .unwrap_or(Cow::from("0"));
+
+                let str = format!("{}.{}", int, decimal);
+
+                // println!(
+                //     "FLOAT: {:?}, {:?} {:?}",
+                //     intp,
+                //     decimalp,
+                //     decimal_part.is_some()
+                // );
+
+                if decimal_part.is_some() {
+                    str.parse::<f64>()
+                        .map(|s| Token::NumberLiteral(Number::Float(s)))
+                        .map_err(|_| nom::Err::Error((input, nom::error::ErrorKind::Digit)))
+                } else {
+                    str.parse::<u64>()
+                        .map(|s| Token::NumberLiteral(Number::UnsignedInteger(s)))
+                        .map_err(|_| nom::Err::Error((input, nom::error::ErrorKind::Digit)))
+                }
+            },
         )(input)
     }
 
@@ -106,7 +183,7 @@ mod parsing {
                 many0(alt((alphanumeric1, tag("_")))),
             )),
             |s| {
-                let c = complete_byte_slice_str_from_utf8(s);
+                let c = ConvertToUtf8Str::to_utf8_str(&s);
                 c.map(|syntax| match syntax {
                     "let" => Token::Let,
                     "fn" => Token::Function,
@@ -115,6 +192,13 @@ mod parsing {
                     "return" => Token::Return,
                     "true" => Token::BoolLiteral(true),
                     "false" => Token::BoolLiteral(false),
+                    "component" => Token::Component,
+                    "use" => Token::Use,
+                    "loop" => Token::Loop,
+                    "break" => Token::Break,
+                    "next" => Token::Next,
+                    "event" => Token::Event,
+                    "bind" => Token::Bind,
                     _ => Token::Ident(syntax.to_string()),
                 })
             },
@@ -127,6 +211,7 @@ mod parsing {
 
     pub fn lex_punctuations(input: &[u8]) -> IResult<&[u8], Token> {
         alt((
+            dot_punctuation,
             comma_punctuation,
             semicolon_punctuation,
             colon_punctuation,
@@ -165,6 +250,8 @@ mod byte_slice {
     use nom::{AsBytes, IResult};
     use std::str::{FromStr, Utf8Error};
 
+    use super::ConvertToUtf8Str;
+
     fn parse_quoted_string(input: &[u8]) -> IResult<&[u8], Vec<u8>> {
         use std::result::Result::*;
 
@@ -194,9 +281,9 @@ mod byte_slice {
         FromStr::from_str(c)
     }
 
-    pub(crate) fn complete_byte_slice_str_from_utf8(c: &[u8]) -> Result<&str, Utf8Error> {
-        std::str::from_utf8(c)
-    }
+    // pub(crate) fn complete_byte_slice_str_from_utf8(c: &[u8]) -> Result<&str, Utf8Error> {
+    //     std::str::from_utf8(c)
+    // }
 
     pub(crate) fn parse_string(input: &[u8]) -> IResult<&[u8], String> {
         delimited(
@@ -204,5 +291,21 @@ mod byte_slice {
             map_res(parse_quoted_string, convert_vec_utf8),
             tag("\""),
         )(input)
+    }
+}
+
+trait ConvertToUtf8Str {
+    fn to_utf8_str(&self) -> Result<&str, Utf8Error>;
+}
+
+impl ConvertToUtf8Str for &[u8] {
+    fn to_utf8_str(&self) -> Result<&str, Utf8Error> {
+        std::str::from_utf8(self)
+    }
+}
+
+impl ConvertToUtf8Str for [u8] {
+    fn to_utf8_str(&self) -> Result<&str, Utf8Error> {
+        (&self[..]).to_utf8_str()
     }
 }

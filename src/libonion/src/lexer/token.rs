@@ -10,6 +10,7 @@ use std::str::FromStr;
 pub enum Token {
     Illegal,
     EOF,
+    Dot,
 
     // Identifiers and literals
     Ident(String),
@@ -40,6 +41,13 @@ pub enum Token {
     Function,
     Let,
     Return,
+    Event,
+    Component,
+    Use,
+    Loop,
+    Break,
+    Next,
+    Bind,
 
     // Punctuations
     Comma,

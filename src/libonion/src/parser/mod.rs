@@ -1,4 +1,5 @@
 use nom::*;
+use std::convert::Into;
 
 pub mod ast;
 use crate::lexer::token::*;
@@ -32,6 +33,7 @@ tag_token!(rparen_tag, Token::RParen);
 tag_token!(lbracket_tag, Token::LBracket);
 tag_token!(rbracket_tag, Token::RBracket);
 tag_token!(comma_tag, Token::Comma);
+tag_token!(dot_tag, Token::Dot);
 tag_token!(colon_tag, Token::Colon);
 tag_token!(plus_tag, Token::Plus);
 tag_token!(minus_tag, Token::Minus);
@@ -60,6 +62,21 @@ fn infix_op(t: &Token) -> (Precedence, Option<Infix>) {
     }
 }
 
+// fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
+//     let (i1, t1) = take(1usize)(input)?;
+//
+//     if t1.tok.is_empty() {
+//         Err(Err::Error(Error::new(input, ErrorKind::Tag)))
+//     } else {
+//         match t1.tok[0].clone() {
+//             Token::NumberLiteral(name) => Ok((i1, Literal::NumberLiteral(name))),
+//             Token::StringLiteral(s) => Ok((i1, Literal::StringLiteral(s))),
+//             Token::BoolLiteral(b) => Ok((i1, Literal::BoolLiteral(b))),
+//             _ => Err(Err::Error(Error::new(input, ErrorKind::Tag))),
+//         }
+//     }
+// }
+
 fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
     let (i1, t1) = take(1usize)(input)?;
 
@@ -67,11 +84,26 @@ fn parse_literal(input: Tokens) -> IResult<Tokens, Literal> {
         Err(Err::Error(Error::new(input, ErrorKind::Tag)))
     } else {
         match t1.tok[0].clone() {
-            Token::NumberLiteral(name) => Ok((i1, Literal::NumberLiteral(name))),
+            Token::NumberLiteral(Number::UnsignedInteger(name)) => {
+                Ok((i1, Literal::NumberLiteral(Number::UnsignedInteger(name))))
+            }
+            Token::NumberLiteral(Number::Float(f)) => {
+                Ok((i1, Literal::NumberLiteral(Number::Float(f.into()))))
+            }
             Token::StringLiteral(s) => Ok((i1, Literal::StringLiteral(s))),
             Token::BoolLiteral(b) => Ok((i1, Literal::BoolLiteral(b))),
             _ => Err(Err::Error(Error::new(input, ErrorKind::Tag))),
         }
+    }
+}
+
+fn parse_component_keyword(input: Tokens) -> IResult<Tokens, Ident> {
+    let (i1, t1) = take(1usize)(input)?;
+
+    if t1.tok.is_empty() {
+        Err(Err::Error(Error::new(input, ErrorKind::Tag)))
+    } else {
+        Ok((i1, Ident("component".to_owned())))
     }
 }
 
@@ -101,6 +133,7 @@ fn parse_stmt(input: Tokens) -> IResult<Tokens, Statement> {
         parse_let_stmt,
         parse_prop_stmt,
         parse_component_stmt,
+        parse_named_block_stmt,
         parse_return_stmt,
         parse_expr_stmt,
     ))(input)
@@ -130,8 +163,18 @@ fn parse_prop_stmt(input: Tokens) -> IResult<Tokens, Statement> {
 
 fn parse_component_stmt(input: Tokens) -> IResult<Tokens, Statement> {
     map(
-        tuple((parse_ident, parse_block_stmt, opt(semicolon_tag))),
-        |(ident, program, _)| Statement::Component {
+        tuple((parse_component_keyword, parse_ident, parse_block_stmt)),
+        |(_, ident, program)| Statement::Component {
+            ident,
+            body: program,
+        },
+    )(input)
+}
+
+fn parse_named_block_stmt(input: Tokens) -> IResult<Tokens, Statement> {
+    map(
+        tuple((parse_ident, parse_block_stmt)),
+        |(ident, program)| Statement::NamedBlock {
             ident,
             body: program,
         },
@@ -457,6 +500,7 @@ mod tests {
         age: 75;\
         is_active: true;\
         is_alive: false;\
+        id: my_id;
         "
         .as_bytes();
 
@@ -473,6 +517,63 @@ mod tests {
                 Ident("is_alive".to_owned()),
                 Expression::Literal(Literal::BoolLiteral(false)),
             ),
+            Statement::Prop(
+                Ident("id".to_owned()),
+                Expression::Identifier(Ident("my_id".to_owned())),
+            )
+        ];
+
+        assert_input_with_program(input, program);
+    }
+
+    #[test]
+    fn create_component() {
+        let input = "\
+        component Test {\
+            let value = \"Hello World!\";
+            let color = \"#ff0000\";
+
+            render {
+                text {
+                    content: \"Test\";
+                    background: color;
+                }
+            }
+        }\
+        ".as_bytes();
+
+        let program: Program = vec![
+            Statement::Component { 
+                ident: Ident("Test".to_owned()),
+                body: vec![
+                    Statement::Let(
+                        Ident("value".to_owned()),
+                        Expression::Literal(Literal::StringLiteral("Hello World!".to_owned())),
+                    ),
+                    Statement::Let(
+                        Ident("color".to_owned()),
+                        Expression::Literal(Literal::StringLiteral("#ff0000".to_owned())),
+                    ),
+                    Statement::NamedBlock {
+                        ident: Ident("render".to_owned()),
+                        body: vec![
+                            Statement::NamedBlock {
+                                ident: Ident("text".to_owned()),
+                                body: vec![
+                                    Statement::Prop(
+                                        Ident("content".to_owned()),
+                                        Expression::Literal(Literal::StringLiteral("Test".to_owned())),
+                                    ),
+                                    Statement::Prop(
+                                        Ident("background".to_owned()),
+                                        Expression::Identifier(Ident("color".to_owned())),
+                                    )
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
         ];
 
         assert_input_with_program(input, program);
@@ -491,9 +592,9 @@ mod tests {
         "
         .as_bytes();
 
-        let program: Program = vec![Statement::Component {
+        let program: Program = vec![Statement::NamedBlock {
             ident: Ident("button".to_owned()),
-            body: vec![Statement::Component {
+            body: vec![Statement::NamedBlock {
                 ident: Ident("style".to_owned()),
                 body: vec![
                     Statement::Prop(
@@ -510,7 +611,7 @@ mod tests {
                         Expression::Call {
                             function: Box::new(Expression::Identifier(Ident("vh".to_owned()))),
                             arguments: vec![Expression::Literal(Literal::NumberLiteral(
-                                Number::Float(50f64),
+                                Number::Float(50.0),
                             ))],
                         },
                     ),

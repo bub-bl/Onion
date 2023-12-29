@@ -7,6 +7,7 @@ pub enum Statement {
     Let(Ident, Expression),
     Prop(Ident, Expression),
     Component { ident: Ident, body: Program },
+    NamedBlock { ident: Ident, body: Program },
     Return(Expression),
     Expression(Expression),
 }
