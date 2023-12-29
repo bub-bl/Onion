@@ -14,7 +14,6 @@ pub enum Statement {
 
 #[derive(PartialEq, Debug, Clone)]
 pub enum Keyword {
-    None,
     Some(Ident),
 }
 
