@@ -3,10 +3,10 @@ name = "libonion"
 version = "0.1.0"
 edition = "2021"
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [lib]
 name = "libonion"
 path = "src/lib.rs"
 
 [dependencies]
-nom = "7.1.3"
-palette = "0.7.3"
