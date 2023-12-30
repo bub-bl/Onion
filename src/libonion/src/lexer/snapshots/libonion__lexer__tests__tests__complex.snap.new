@@ -1,0 +1,508 @@
+---
+source: libonion/src/lexer/tests.rs
+assertion_line: 13
+expression: "\n            component Person {\n                let age = 5;\n                let name = \"John\";\n                let is_male = true;\n\n                if age > 18 {\n                    println(\"age is: {age}\")\n                } else {\n                    throw \"Age is less than 18\"\n                }\n\n                render {\n                    text {\n                        content: \"Hello World\";\n                    }\n                }\n            }\n        "
+---
+[
+  {
+    "kind": {
+      "Identifier": "component"
+    },
+    "span": {
+      "start": 13,
+      "end": 22
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "Person"
+    },
+    "span": {
+      "start": 23,
+      "end": 29
+    }
+  },
+  {
+    "kind": "LBrace",
+    "span": {
+      "start": 30,
+      "end": 31
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "let"
+    },
+    "span": {
+      "start": 48,
+      "end": 51
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "age"
+    },
+    "span": {
+      "start": 52,
+      "end": 55
+    }
+  },
+  {
+    "kind": "Assign",
+    "span": {
+      "start": 56,
+      "end": 57
+    }
+  },
+  {
+    "kind": {
+      "Integer": 5
+    },
+    "span": {
+      "start": 58,
+      "end": 59
+    }
+  },
+  {
+    "kind": "Semicolon",
+    "span": {
+      "start": 59,
+      "end": 60
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "let"
+    },
+    "span": {
+      "start": 77,
+      "end": 80
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "name"
+    },
+    "span": {
+      "start": 81,
+      "end": 85
+    }
+  },
+  {
+    "kind": "Assign",
+    "span": {
+      "start": 86,
+      "end": 87
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 88,
+      "end": 89
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "John"
+    },
+    "span": {
+      "start": 89,
+      "end": 93
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 93,
+      "end": 94
+    }
+  },
+  {
+    "kind": "Semicolon",
+    "span": {
+      "start": 94,
+      "end": 95
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "let"
+    },
+    "span": {
+      "start": 112,
+      "end": 115
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "is_male"
+    },
+    "span": {
+      "start": 116,
+      "end": 123
+    }
+  },
+  {
+    "kind": "Assign",
+    "span": {
+      "start": 124,
+      "end": 125
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "true"
+    },
+    "span": {
+      "start": 126,
+      "end": 130
+    }
+  },
+  {
+    "kind": "Semicolon",
+    "span": {
+      "start": 130,
+      "end": 131
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "if"
+    },
+    "span": {
+      "start": 149,
+      "end": 151
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "age"
+    },
+    "span": {
+      "start": 152,
+      "end": 155
+    }
+  },
+  {
+    "kind": "GreaterThan",
+    "span": {
+      "start": 156,
+      "end": 157
+    }
+  },
+  {
+    "kind": {
+      "Integer": 18
+    },
+    "span": {
+      "start": 158,
+      "end": 160
+    }
+  },
+  {
+    "kind": "LBrace",
+    "span": {
+      "start": 161,
+      "end": 162
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "println"
+    },
+    "span": {
+      "start": 183,
+      "end": 190
+    }
+  },
+  {
+    "kind": "LParen",
+    "span": {
+      "start": 190,
+      "end": 191
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 191,
+      "end": 192
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "age"
+    },
+    "span": {
+      "start": 192,
+      "end": 195
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "is"
+    },
+    "span": {
+      "start": 196,
+      "end": 198
+    }
+  },
+  {
+    "kind": "Colon",
+    "span": {
+      "start": 198,
+      "end": 199
+    }
+  },
+  {
+    "kind": "LBrace",
+    "span": {
+      "start": 200,
+      "end": 201
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "age"
+    },
+    "span": {
+      "start": 201,
+      "end": 204
+    }
+  },
+  {
+    "kind": "RBrace",
+    "span": {
+      "start": 204,
+      "end": 205
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 205,
+      "end": 206
+    }
+  },
+  {
+    "kind": "RParen",
+    "span": {
+      "start": 206,
+      "end": 207
+    }
+  },
+  {
+    "kind": "RBrace",
+    "span": {
+      "start": 224,
+      "end": 225
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "else"
+    },
+    "span": {
+      "start": 226,
+      "end": 230
+    }
+  },
+  {
+    "kind": "LBrace",
+    "span": {
+      "start": 231,
+      "end": 232
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "throw"
+    },
+    "span": {
+      "start": 253,
+      "end": 258
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 259,
+      "end": 260
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "Age"
+    },
+    "span": {
+      "start": 260,
+      "end": 263
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "is"
+    },
+    "span": {
+      "start": 264,
+      "end": 266
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "less"
+    },
+    "span": {
+      "start": 267,
+      "end": 271
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "than"
+    },
+    "span": {
+      "start": 272,
+      "end": 276
+    }
+  },
+  {
+    "kind": {
+      "Integer": 18
+    },
+    "span": {
+      "start": 277,
+      "end": 279
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 279,
+      "end": 280
+    }
+  },
+  {
+    "kind": "RBrace",
+    "span": {
+      "start": 297,
+      "end": 298
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "render"
+    },
+    "span": {
+      "start": 316,
+      "end": 322
+    }
+  },
+  {
+    "kind": "LBrace",
+    "span": {
+      "start": 323,
+      "end": 324
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "text"
+    },
+    "span": {
+      "start": 345,
+      "end": 349
+    }
+  },
+  {
+    "kind": "LBrace",
+    "span": {
+      "start": 350,
+      "end": 351
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "content"
+    },
+    "span": {
+      "start": 376,
+      "end": 383
+    }
+  },
+  {
+    "kind": "Colon",
+    "span": {
+      "start": 383,
+      "end": 384
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 385,
+      "end": 386
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "Hello"
+    },
+    "span": {
+      "start": 386,
+      "end": 391
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "World"
+    },
+    "span": {
+      "start": 392,
+      "end": 397
+    }
+  },
+  {
+    "kind": "Illegal",
+    "span": {
+      "start": 397,
+      "end": 398
+    }
+  },
+  {
+    "kind": "Semicolon",
+    "span": {
+      "start": 398,
+      "end": 399
+    }
+  },
+  {
+    "kind": "RBrace",
+    "span": {
+      "start": 420,
+      "end": 421
+    }
+  },
+  {
+    "kind": "RBrace",
+    "span": {
+      "start": 438,
+      "end": 439
+    }
+  },
+  {
+    "kind": "RBrace",
+    "span": {
+      "start": 452,
+      "end": 453
+    }
+  },
+  {
+    "kind": "EOF",
+    "span": {
+      "start": 462,
+      "end": 463
+    }
+  }
+]

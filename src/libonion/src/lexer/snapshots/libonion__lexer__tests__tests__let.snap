@@ -1,0 +1,47 @@
+---
+source: libonion/src/lexer/tests.rs
+expression: let x=5
+---
+[
+  {
+    "kind": {
+      "Identifier": "let"
+    },
+    "span": {
+      "start": 0,
+      "end": 3
+    }
+  },
+  {
+    "kind": {
+      "Identifier": "x"
+    },
+    "span": {
+      "start": 4,
+      "end": 5
+    }
+  },
+  {
+    "kind": "Assign",
+    "span": {
+      "start": 5,
+      "end": 6
+    }
+  },
+  {
+    "kind": {
+      "Integer": 5
+    },
+    "span": {
+      "start": 6,
+      "end": 7
+    }
+  },
+  {
+    "kind": "EOF",
+    "span": {
+      "start": 7,
+      "end": 8
+    }
+  }
+]

@@ -1,12 +1,13 @@
 use std::fmt;
+use serde::{Serialize, Deserialize};
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq, Serialize, Deserialize)]
 pub struct Span {
     pub start: usize,
     pub end: usize
 }
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq, Serialize, Deserialize)]
 pub struct Token {
     pub kind: TokenKind,
     pub span: Span,
@@ -18,7 +19,7 @@ impl fmt::Display for Token {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq, Serialize, Deserialize)]
 pub enum TokenKind {
     Illegal,
     EOF,
@@ -52,6 +53,7 @@ pub enum TokenKind {
     LBracket,
     RBracket,
 
+    Component,
     Function,
     Let,
     True,
@@ -89,6 +91,7 @@ impl fmt::Display for TokenKind {
             TokenKind::RBrace => write!(f, "}}"),
             TokenKind::LBracket => write!(f, "["),
             TokenKind::RBracket => write!(f, "]"),
+            TokenKind::Component => write!(f, "component"),
             TokenKind::Function => write!(f, "fn"),
             TokenKind::Let => write!(f, "let"),
             TokenKind::True => write!(f, "true"),
@@ -102,6 +105,7 @@ impl fmt::Display for TokenKind {
 
 pub fn lookup_identifier(identifier: &str) -> TokenKind {
     match identifier {
+        "component" => TokenKind::Component,
         "fn" => TokenKind::Function,
         "let" => TokenKind::Let,
         "true" => TokenKind::True,
