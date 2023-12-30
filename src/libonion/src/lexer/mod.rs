@@ -198,7 +198,6 @@ mod parsing {
                     "break" => Token::Break,
                     "next" => Token::Next,
                     "event" => Token::Event,
-                    "bind" => Token::Bind,
                     _ => Token::Ident(syntax.to_string()),
                 })
             },

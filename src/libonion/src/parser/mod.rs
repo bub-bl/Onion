@@ -42,12 +42,12 @@ tag_token!(if_tag, Token::If);
 tag_token!(else_tag, Token::Else);
 tag_token!(function_tag, Token::Function);
 tag_token!(eof_tag, Token::EOF);
-tag_token!(bind_tag, Token::Bind);
+// tag_token!(bind_tag, Token::Bind);
 tag_token!(event_tag, Token::Event);
 tag_token!(use_tag, Token::Use);
-tag_token!(init_tag, Token::Init);
-tag_token!(get_tag, Token::Get);
-tag_token!(set_tag, Token::Set);
+// tag_token!(init_tag, Token::Init);
+// tag_token!(get_tag, Token::Get);
+// tag_token!(set_tag, Token::Set);
 tag_token!(component_tag, Token::Component);
 tag_token!(loop_tag, Token::Loop);
 tag_token!(break_tag, Token::Break);
@@ -556,19 +556,19 @@ mod tests {
 
     #[test]
     fn create_component() {
-        let input = "\
-        component Test {\
+        let input = "
+        component Test {
             let value = \"Hello World!\";
             let color = \"#ff0000\";
-            let age: [enculer, pd] = 26;
-
+            let age: [bind, init] = 26;
+            
             render {
                 text {
                     content: \"Test\";
                     background: color;
                 }
             }
-        }\
+        }
         ".as_bytes();
 
         let program: Program = vec![
@@ -588,8 +588,8 @@ mod tests {
                     Statement::Let(
                         Ident("age".to_owned()),
                         Some(Expression::Array(vec![
-                            Expression::Identifier(Ident("enculer".to_owned())),
-                            Expression::Identifier(Ident("pd".to_owned())),
+                            Expression::Identifier(Ident("bind".to_owned())),
+                            Expression::Identifier(Ident("init".to_owned())),
                         ])),
                         Expression::Literal(Literal::NumberLiteral(Number::UnsignedInteger(26))),
                     ),

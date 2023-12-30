@@ -15,7 +15,6 @@ pub enum Statement {
 #[derive(PartialEq, Debug, Clone)]
 pub enum Expression {
     Identifier(Ident),
-    Keyword(Ident),
     Literal(Literal),
     Prefix(Prefix, Box<Expression>),
     Infix(Infix, Box<Expression>, Box<Expression>),
