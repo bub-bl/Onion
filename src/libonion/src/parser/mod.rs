@@ -1,14 +1,15 @@
-pub mod ast;
+use crate::lexer::token::{Span, Token, TokenKind};
+use crate::lexer::Lexer;
+use crate::parser::ast::{
+    Array, BinaryExpression, BlockStatement, Boolean, Expression, FunctionCall,
+    FunctionDeclaration, Hash, Identifier, If, Index, Integer, Let, Literal, Node, Program,
+    ReturnStatement, Statement, StringType, UnaryExpression,
+};
+use crate::parser::precedences::{get_token_precedence, Precedence};
 
-use self::ast::{
-    get_token_precedence, Array, BinaryExpression, BlockStatement, Boolean, Expression,
-    FunctionCall, FunctionDeclaration, Hash, Identifier, If, Index, Integer, Let, Literal, Node,
-    Precedence, Program, ReturnStatement, Statement, StringType, UnaryExpression,
-};
-use crate::lexer::{
-    token::{Span, Token, TokenKind},
-    Lexer,
-};
+pub mod ast;
+mod precedences;
+mod tests;
 
 type ParseError = String;
 type ParseErrors = Vec<ParseError>;
@@ -25,13 +26,23 @@ impl<'a> Parser<'a> {
         let cur = lexer.next_token();
         let next = lexer.next_token();
         let errors = Vec::new();
+        // in strict sense, rust can be as classic go pattern, but it requires more work
+        // so let's just use pattern matching
+        // ```rust
+        // type PrefixParseFn = fn() -> Result<Expression, ParseError>;
+        // type InfixParseFn = fn(Expression) -> Result<Expression, ParseError>;
+        // let prefix_parse_fns = HashMap::new();
+        // let infix_parse_fns = HashMap::new();
+        // ```
 
-        return Parser {
+        let p = Parser {
             lexer,
             current_token: cur,
             peek_token: next,
             errors,
         };
+
+        return p;
     }
 
     fn next_token(&mut self) {
@@ -40,27 +51,25 @@ impl<'a> Parser<'a> {
     }
 
     fn current_token_is(&mut self, token: &TokenKind) -> bool {
-        return self.current_token.kind == *token;
+        self.current_token.kind == *token
     }
 
     fn peek_token_is(&mut self, token: &TokenKind) -> bool {
-        return self.peek_token.kind == *token;
+        self.peek_token.kind == *token
     }
 
     fn expect_peek(&mut self, token: &TokenKind) -> Result<(), ParseError> {
         self.next_token();
-
-        if self.current_token_is(token) {
+        if self.current_token.kind == *token {
             Ok(())
         } else {
-            let e = format!("excepted token: {} got: {}", token, self.current_token);
+            let e = format!("expected token: {} got: {}", token, self.current_token);
             Err(e)
         }
     }
 
     pub fn parse_program(&mut self) -> Result<Program, ParseErrors> {
         let mut program = Program::new();
-
         while !self.current_token_is(&TokenKind::EOF) {
             match self.parse_statement() {
                 Ok(stmt) => program.body.push(stmt),
@@ -68,7 +77,6 @@ impl<'a> Parser<'a> {
             }
             self.next_token();
         }
-
         program.span.end = self.current_token.span.end;
 
         if self.errors.is_empty() {
@@ -86,14 +94,67 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
-        let expr = self.parse_expression(Precedence::Lowest)?.0;
+    fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
+        let start = self.current_token.span.start;
+        self.next_token();
 
-        if self.peek_token_is(&TokenKind::Semicolon) {
+        let name = self.current_token.clone();
+        let mut identifier_name = "".to_string();
+        match &self.current_token.kind {
+            TokenKind::Identifier { name } => {
+                identifier_name = name.to_string();
+            }
+            _ => return Err(format!("{} not an identifier", self.current_token)),
+        };
+
+        self.expect_peek(&TokenKind::Assign)?;
+        self.next_token();
+
+        let mut value = self.parse_expression(Precedence::Lowest)?.0;
+        match value {
+            Expression::Function(ref mut f) => {
+                f.name = identifier_name;
+            }
+            _ => {}
+        }
+
+        if self.peek_token_is(&TokenKind::SemiColon) {
             self.next_token();
         }
 
-        Ok(Statement::Expression(expr))
+        let end = self.current_token.span.end;
+
+        return Ok(Statement::Let(Let {
+            identifier: name,
+            expr: value,
+            span: Span { start, end },
+        }));
+    }
+
+    fn parse_return_statement(&mut self) -> Result<Statement, ParseError> {
+        let start = self.current_token.span.start;
+        self.next_token();
+
+        let value = self.parse_expression(Precedence::Lowest)?.0;
+
+        if self.peek_token_is(&TokenKind::SemiColon) {
+            self.next_token();
+        }
+        let end = self.current_token.span.end;
+
+        return Ok(Statement::Return(ReturnStatement {
+            argument: value,
+            span: Span { start, end },
+        }));
+    }
+
+    fn parse_expression_statement(&mut self) -> Result<Statement, ParseError> {
+        let expr = self.parse_expression(Precedence::Lowest)?.0;
+        if self.peek_token_is(&TokenKind::SemiColon) {
+            self.next_token();
+        }
+
+        Ok(Statement::Expr(expr))
     }
 
     fn parse_expression(
@@ -102,8 +163,7 @@ impl<'a> Parser<'a> {
     ) -> Result<(Expression, Span), ParseError> {
         let mut left_start = self.current_token.span.start;
         let mut left = self.parse_prefix_expression()?;
-
-        while self.peek_token.kind != TokenKind::Semicolon
+        while self.peek_token.kind != TokenKind::SemiColon
             && precedence < get_token_precedence(&self.peek_token.kind)
         {
             match self.parse_infix_expression(&left, left_start) {
@@ -126,6 +186,7 @@ impl<'a> Parser<'a> {
         }
 
         let end = self.current_token.span.end;
+
         Ok((
             left,
             Span {
@@ -138,7 +199,7 @@ impl<'a> Parser<'a> {
     fn parse_prefix_expression(&mut self) -> Result<Expression, ParseError> {
         // this is prefix fn map :)
         match &self.current_token.kind {
-            TokenKind::Identifier(name) => {
+            TokenKind::Identifier { name } => {
                 return Ok(Expression::Identifier(Identifier {
                     name: name.clone(),
                     span: self.current_token.clone().span,
@@ -153,6 +214,12 @@ impl<'a> Parser<'a> {
             TokenKind::String(s) => {
                 return Ok(Expression::Literal(Literal::String(StringType {
                     raw: s.to_string(),
+                    span: self.current_token.clone().span,
+                })))
+            }
+            b @ TokenKind::True | b @ TokenKind::False => {
+                return Ok(Expression::Literal(Literal::Boolean(Boolean {
+                    raw: *b == TokenKind::True,
                     span: self.current_token.clone().span,
                 })))
             }
@@ -185,12 +252,6 @@ impl<'a> Parser<'a> {
                     span,
                 })));
             }
-            b @ TokenKind::True | b @ TokenKind::False => {
-                return Ok(Expression::Literal(Literal::Boolean(Boolean {
-                    raw: *b == TokenKind::True,
-                    span: self.current_token.clone().span,
-                })))
-            }
             TokenKind::LBrace => self.parse_hash_expression(),
             _ => Err(format!(
                 "no prefix function for token: {}",
@@ -214,14 +275,10 @@ impl<'a> Parser<'a> {
             | TokenKind::LessThan
             | TokenKind::GreaterThan => {
                 self.next_token();
-
                 let infix_op = self.current_token.clone();
                 let precedence_value = get_token_precedence(&self.current_token.kind);
-
                 self.next_token();
-
                 let (right, span) = self.parse_expression(precedence_value).unwrap();
-
                 return Some(Ok(Expression::Infix(BinaryExpression {
                     op: infix_op,
                     left: Box::new(left.clone()),
@@ -244,49 +301,12 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
-        let start = self.current_token.span.start;
-        self.next_token();
-
-        let name = self.current_token.clone();
-        let mut identifier_name = "".to_string();
-
-        match &self.current_token.kind {
-            TokenKind::Identifier(name) => {
-                identifier_name = name.to_string();
-            }
-            _ => return Err(format!("{} no an identifier", self.current_token)),
-        }
-
-        self.expect_peek(&TokenKind::Assign);
-        self.next_token();
-
-        let mut value = self.parse_expression(Precedence::Lowest)?.0;
-
-        match value {
-            Expression::Function(ref mut f) => {
-                f.name = identifier_name;
-            }
-            _ => {}
-        }
-
-        let end = self.current_token.span.end;
-
-        return Ok(Statement::Let(Let {
-            identifier: name,
-            expression: value,
-            span: Span { start, end },
-        }));
-    }
-
     fn parse_if_expression(&mut self) -> Result<Expression, ParseError> {
         let start = self.current_token.span.start;
-
         self.expect_peek(&TokenKind::LParen)?;
         self.next_token();
 
         let condition = self.parse_expression(Precedence::Lowest)?.0;
-
         self.expect_peek(&TokenKind::RParen)?;
         self.expect_peek(&TokenKind::LBrace)?;
 
@@ -337,9 +357,11 @@ impl<'a> Parser<'a> {
         self.expect_peek(&TokenKind::LParen)?;
 
         let params = self.parse_fn_parameters()?;
+
         self.expect_peek(&TokenKind::LBrace)?;
 
         let function_body = self.parse_block_statement()?;
+
         let end = self.current_token.span.end;
 
         Ok(Expression::Function(FunctionDeclaration {
@@ -352,7 +374,6 @@ impl<'a> Parser<'a> {
 
     fn parse_fn_parameters(&mut self) -> Result<Vec<Identifier>, ParseError> {
         let mut params = Vec::new();
-
         if self.peek_token_is(&TokenKind::RParen) {
             self.next_token();
             return Ok(params);
@@ -361,13 +382,13 @@ impl<'a> Parser<'a> {
         self.next_token();
 
         match &self.current_token.kind {
-            TokenKind::Identifier(name) => params.push(Identifier {
+            TokenKind::Identifier { name } => params.push(Identifier {
                 name: name.clone(),
                 span: self.current_token.span.clone(),
             }),
             token => {
                 return Err(format!(
-                    "expected function params to be an identifier, got {}",
+                    "expected function params  to be an identifier, got {}",
                     token
                 ))
             }
@@ -376,15 +397,14 @@ impl<'a> Parser<'a> {
         while self.peek_token_is(&TokenKind::Comma) {
             self.next_token();
             self.next_token();
-
             match &self.current_token.kind {
-                TokenKind::Identifier(name) => params.push(Identifier {
+                TokenKind::Identifier { name } => params.push(Identifier {
                     name: name.clone(),
                     span: self.current_token.span.clone(),
                 }),
                 token => {
                     return Err(format!(
-                        "expected function params to be an identifier, got {}",
+                        "expected function params  to be an identifier, got {}",
                         token
                     ))
                 }
@@ -392,6 +412,7 @@ impl<'a> Parser<'a> {
         }
 
         self.expect_peek(&TokenKind::RParen)?;
+
         return Ok(params);
     }
 
@@ -401,14 +422,13 @@ impl<'a> Parser<'a> {
         let mut start = self.current_token.span.start;
         let (arguments, ..) = self.parse_expression_list(&TokenKind::RParen)?;
         let end = self.current_token.span.end;
-
         match &expr {
             Expression::Identifier(i) => start = i.span.start,
             Expression::Function(f) => start = f.span.start,
-            _ => return Err("expected function".to_string()),
+            _ => return Err(format!("expected function")),
         }
-
         let callee = Box::new(expr);
+
         Ok(Expression::FunctionCall(FunctionCall {
             callee,
             arguments,
@@ -422,21 +442,19 @@ impl<'a> Parser<'a> {
     ) -> Result<(Vec<Expression>, Span), ParseError> {
         let start = self.current_token.span.start;
         let mut expr_list = Vec::new();
-
         if self.peek_token_is(end) {
             self.next_token();
-
             let end = self.current_token.span.end;
             return Ok((expr_list, Span { start, end }));
         }
 
         self.next_token();
+
         expr_list.push(self.parse_expression(Precedence::Lowest)?.0);
 
         while self.peek_token_is(&TokenKind::Comma) {
             self.next_token();
             self.next_token();
-
             expr_list.push(self.parse_expression(Precedence::Lowest)?.0);
         }
 
@@ -449,8 +467,8 @@ impl<'a> Parser<'a> {
     fn parse_index_expression(&mut self, left: Expression) -> Result<Expression, ParseError> {
         let start = self.current_token.span.start;
         self.next_token();
-
         let index = self.parse_expression(Precedence::Lowest)?.0;
+
         self.expect_peek(&TokenKind::RBracket)?;
 
         let end = self.current_token.span.end;
@@ -465,11 +483,11 @@ impl<'a> Parser<'a> {
     fn parse_hash_expression(&mut self) -> Result<Expression, ParseError> {
         let mut map = Vec::new();
         let start = self.current_token.span.start;
-
         while !self.peek_token_is(&TokenKind::RBrace) {
             self.next_token();
 
             let key = self.parse_expression(Precedence::Lowest)?.0;
+
             self.expect_peek(&TokenKind::Colon)?;
 
             self.next_token();
@@ -489,24 +507,6 @@ impl<'a> Parser<'a> {
             elements: map,
             span: Span { start, end },
         })))
-    }
-
-    fn parse_return_statement(&mut self) -> Result<Statement, ParseError> {
-        let start = self.current_token.span.start;
-        self.next_token();
-
-        let value = self.parse_expression(Precedence::Lowest)?.0;
-
-        if self.peek_token_is(&TokenKind::Semicolon) {
-            self.next_token();
-        }
-
-        let end = self.current_token.span.end;
-
-        return Ok(Statement::Return(ReturnStatement {
-            argument: value,
-            span: Span { start, end },
-        }));
     }
 }
 

@@ -1,7 +1,7 @@
 ---
 source: libonion/src/lexer/tests.rs
 assertion_line: 25
-expression: let x=5
+expression: let y=true
 ---
 [
   {
@@ -17,7 +17,7 @@ expression: let x=5
     "kind": {
       "type": "Identifier",
       "value": {
-        "name": "x"
+        "name": "y"
       }
     },
     "span": {
@@ -36,12 +36,11 @@ expression: let x=5
   },
   {
     "kind": {
-      "type": "Integer",
-      "value": 5
+      "type": "True"
     },
     "span": {
       "start": 6,
-      "end": 7
+      "end": 10
     }
   },
   {
@@ -49,8 +48,8 @@ expression: let x=5
       "type": "EOF"
     },
     "span": {
-      "start": 7,
-      "end": 8
+      "start": 10,
+      "end": 11
     }
   }
 ]
