@@ -1,6 +1,6 @@
 ---
 source: libonion/src/lexer/tests.rs
-assertion_line: 13
+assertion_line: 10
 expression: "\n            component Person {\n                let age = 5;\n                let name = \"John\";\n                let is_male = true;\n\n                if age > 18 {\n                    println(\"age is: {age}\")\n                } else {\n                    throw \"Age is less than 18\"\n                }\n\n                render {\n                    text {\n                        content: \"Hello World\";\n                    }\n                }\n            }\n        "
 ---
 [

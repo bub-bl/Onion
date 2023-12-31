@@ -1,6 +1,6 @@
 ---
 source: libonion/src/lexer/tests.rs
-assertion_line: 13
+assertion_line: 10
 expression: let x = 5;
 ---
 [

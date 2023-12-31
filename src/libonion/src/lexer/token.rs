@@ -1,10 +1,10 @@
+use serde::{Deserialize, Serialize};
 use std::fmt;
-use serde::{Serialize, Deserialize};
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq, Serialize, Deserialize)]
 pub struct Span {
     pub start: usize,
-    pub end: usize
+    pub end: usize,
 }
 
 #[derive(Clone, Debug, Eq, Hash, Ord, PartialOrd, PartialEq, Serialize, Deserialize)]
@@ -15,7 +15,11 @@ pub struct Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "start: {}, end: {}, kind: {}", self.span.start, self.span.end, self.kind)
+        write!(
+            f,
+            "start: {}, end: {}, kind: {}",
+            self.span.start, self.span.end, self.kind
+        )
     }
 }
 
@@ -26,6 +30,7 @@ pub enum TokenKind {
 
     Identifier(String),
     Integer(i64),
+    String(String),
 
     Assign,
     Plus,
@@ -69,6 +74,7 @@ impl fmt::Display for TokenKind {
             TokenKind::Illegal => write!(f, "ILLEGAL"),
             TokenKind::EOF => write!(f, "EOF"),
             TokenKind::Identifier(ident) => write!(f, "{}", ident),
+            TokenKind::String(s) => write!(f, "{}", s),
             TokenKind::Integer(i) => write!(f, "{}", i),
             TokenKind::Assign => write!(f, "="),
             TokenKind::Plus => write!(f, "+"),
