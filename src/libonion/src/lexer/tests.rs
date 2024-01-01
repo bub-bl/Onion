@@ -21,7 +21,7 @@ mod tests {
         token_vs
     }
 
-    pub fn test_lexer_common(name: &str, input: &str) {
+    fn test_lexer_common(name: &str, input: &str) {
         let mut l = Lexer::new(input);
         let token_vs = test_token_set(&mut l);
 

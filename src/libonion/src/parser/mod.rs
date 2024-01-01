@@ -75,12 +75,8 @@ impl<'a> Parser<'a> {
         let mut program = Program::new();
 
         while !self.current_token_is(&TokenKind::EOF) {
-            // match self.parse_statement() {
-            //     Ok(stmt) => program.body.push(stmt),
-            //     Err(e) => self.errors.push(e),
-            // }
-            match self.parse_declaration() {
-                Ok(decl) => program.body.push(decl),
+            match self.parse_statement() {
+                Ok(stmt) => program.body.push(stmt),
                 Err(e) => self.errors.push(e),
             }
             self.next_token();
@@ -99,18 +95,19 @@ impl<'a> Parser<'a> {
         match self.current_token.kind {
             TokenKind::Let => self.parse_let_statement(),
             TokenKind::Return => self.parse_return_statement(),
+            TokenKind::Component => self.parse_declaration(),
             _ => self.parse_expression_statement(),
         }
     }
 
-    fn parse_declaration(&mut self) -> Result<Declaration, ParseError> {
+    fn parse_declaration(&mut self) -> Result<Statement, ParseError> {
         match self.current_token.kind {
             TokenKind::Component => self.parse_component_declaration(),
             _ => Err("expected declaration".to_string()),
         }
     }
 
-    fn parse_component_declaration(&mut self) -> Result<Declaration, ParseError> {
+    fn parse_component_declaration(&mut self) -> Result<Statement, ParseError> {
         let start = self.current_token.span.start;
         self.next_token();
 
@@ -144,15 +141,13 @@ impl<'a> Parser<'a> {
         // }
 
         let end = self.current_token.span.end;
+        println!("body: {:?}", block_statement);
 
-        return Ok(Declaration::Component(ComponentDeclaration {
+        return Ok(Statement::Declaration(Declaration::Component(ComponentDeclaration {
             name,
-            body: BlockStatement {
-                body: block_statement,
-                span: Span { start, end },
-            },
+            body: block_statement,
             span: Span { start, end },
-        }));
+        })));
     }
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
@@ -161,6 +156,7 @@ impl<'a> Parser<'a> {
 
         let name = self.current_token.clone();
         let mut identifier_name = "".to_string();
+        
         match &self.current_token.kind {
             TokenKind::Identifier { name } => {
                 identifier_name = name.to_string();

@@ -6,7 +6,7 @@ use libonion::parser::ast::{
     Array, Boolean, FunctionCall, FunctionDeclaration, Hash,
     Identifier, If, Index, Integer, Literal, Node, StringType,
 };
-use libonion::parser::declaration::Declaration;
+use libonion::parser::declaration::{Declaration, ComponentDeclaration};
 use libonion::parser::expression::{Expression, UnaryExpression, BinaryExpression};
 use libonion::parser::statement::{Statement, ReturnStatement, LetStatement};
 use std::cell::RefCell;
@@ -15,18 +15,18 @@ use std::rc::Rc;
 
 pub fn eval(node: Node, env: &Env) -> Result<Rc<Object>, EvalError> {
     match node {
-        // Node::Program(p) => eval_block_statements(&p.body, env),
-        Node::Program(p) => eval_block_declarations(&p.body, env),
+        Node::Program(p) => eval_block_statements(&p.body, env),
         Node::Statement(statements) => eval_statement(&statements, env),
         Node::Expression(expression) => eval_expression(&expression, env),
-        Node::Declaration(declaration) => eval_declaration(&declaration, env),
     }
 }
 
 fn eval_block_statements(statements: &Vec<Statement>, env: &Env) -> Result<Rc<Object>, EvalError> {
     let mut result = Rc::new(Object::Null);
+
     for statement in statements {
         let val = eval_statement(statement, &Rc::clone(env))?;
+
         match *val {
             Object::ReturnValue(_) => return Ok(val),
             _ => {
@@ -36,33 +36,11 @@ fn eval_block_statements(statements: &Vec<Statement>, env: &Env) -> Result<Rc<Ob
     }
 
     return Ok(result);
-}
-
-fn eval_block_declarations(declarations: &Vec<Declaration>, env: &Env) -> Result<Rc<Object>, EvalError> {
-    let mut result = Rc::new(Object::Null);
-    for decl in declarations {
-        let val = eval_declaration(decl, &Rc::clone(env))?;
-        match *val {
-            Object::ReturnValue(_) => return Ok(val),
-            _ => {
-                result = val;
-            }
-        }
-    }
-
-    return Ok(result);
-}
-
-fn eval_declaration(declaration: &Declaration, env: &Env) -> Result<Rc<Object>, EvalError> {
-    match declaration {
-        Declaration::Component(decl) => {
-            let statements = &decl.body.body;
-            eval_block_statements(&statements, env)
-        }
-    }
 }
 
 fn eval_statement(statement: &Statement, env: &Env) -> Result<Rc<Object>, EvalError> {
+    println!("eval_statement: {:?}", statement);
+
     match statement {
         Statement::Expr(expr) => eval_expression(expr, env),
         Statement::Return(ReturnStatement { argument, .. }) => {
@@ -76,11 +54,24 @@ fn eval_statement(statement: &Statement, env: &Env) -> Result<Rc<Object>, EvalEr
         }) => {
             let val = eval_expression(expr, &Rc::clone(env))?;
             let obj: Rc<Object> = Rc::clone(&val);
+
             if let TokenKind::Identifier { name } = &id.kind {
                 env.borrow_mut().set(name.clone(), obj);
             }
-            return Ok(Rc::new(Object::Null));
+
+            Ok(Rc::new(Object::Null))
         }
+        Statement::Declaration(decl) => eval_declaration(decl, env),
+    }
+}
+
+fn eval_declaration(decl: &Declaration, env: &Env) -> Result<Rc<Object>, EvalError> {
+    match decl {
+        Declaration::Component(ComponentDeclaration {
+            body, ..
+        }) => {
+            eval_block_statements(body, env)
+        },
     }
 }
 
@@ -115,6 +106,7 @@ fn eval_expression(expression: &Expression, env: &Env) -> Result<Rc<Object>, Eva
             ..
         }) => {
             let condition = eval_expression(condition, &Rc::clone(env))?;
+            
             if is_truthy(&condition) {
                 eval_block_statements(&(consequent.body), env)
             } else {
@@ -137,6 +129,7 @@ fn eval_expression(expression: &Expression, env: &Env) -> Result<Rc<Object>, Eva
         }) => {
             let func = eval_expression(callee, &Rc::clone(env))?;
             let args = eval_expressions(arguments, env)?;
+
             apply_function(&func, &args)
         }
         Expression::Index(Index {
@@ -146,6 +139,7 @@ fn eval_expression(expression: &Expression, env: &Env) -> Result<Rc<Object>, Eva
         }) => {
             let literal = eval_expression(left, &Rc::clone(env))?;
             let index = eval_expression(index, env)?;
+
             eval_index_expression(&literal, &index)
         }
     }
@@ -198,6 +192,7 @@ fn unwrap_return(obj: Rc<Object>) -> Result<Rc<Object>, EvalError> {
 
 fn eval_expressions(exprs: &Vec<Expression>, env: &Env) -> Result<Vec<Rc<Object>>, EvalError> {
     let mut list = Vec::new();
+
     for expr in exprs {
         let val = eval_expression(expr, &Rc::clone(env))?;
         list.push(val);

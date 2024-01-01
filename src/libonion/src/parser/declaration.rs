@@ -1,12 +1,11 @@
 use std::fmt;
 use std::fmt::{Formatter, Result};
-
 use serde::{Serialize, Deserialize};
 
 use crate::lexer::token::{Token, Span, TokenKind};
 use crate::parser::ast::format_statements;
 
-use super::statement::BlockStatement;
+use super::statement::Statement;
 
 #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
 #[serde(untagged)]
@@ -20,7 +19,13 @@ pub enum Declaration {
 #[serde(tag = "type")]
 pub struct ComponentDeclaration {
     pub name: Token,
-    pub body: BlockStatement,
+    pub body: Vec<Statement>,
+    pub span: Span,
+}
+
+pub struct BlockDeclaration {
+    pub name: Token,
+    pub body: Vec<Statement>,
     pub span: Span,
 }
 
@@ -42,6 +47,6 @@ impl fmt::Display for Declaration {
 
 impl fmt::Display for ComponentDeclaration {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", format_statements(&self.body.body))
+        write!(f, "{}", format_statements(&self.body))
     }
 }

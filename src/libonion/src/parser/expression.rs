@@ -1,10 +1,8 @@
 use std::fmt;
 use std::fmt::Formatter;
-
 use serde::{Serialize, Deserialize};
 
 use crate::{lexer::token::{Token, Span}, parser::ast::format_expressions};
-
 use super::ast::{Identifier, Literal, FunctionDeclaration, FunctionCall, Index, If};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Eq, Hash, PartialEq)]
