@@ -105,4 +105,22 @@ mod tests {
         ",
         );
     }
+
+    #[test]
+    fn test_lexer_complex_component() {
+        test_lexer_common(
+            "complex_component",
+            "component MyComponent {
+                let x = 5;
+                let y = 10;
+                let z = x + y;
+
+                if (z == 15) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }",
+        );
+    }
 }

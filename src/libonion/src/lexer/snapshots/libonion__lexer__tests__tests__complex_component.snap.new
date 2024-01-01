@@ -1,0 +1,382 @@
+---
+source: libonion/src/lexer/tests.rs
+assertion_line: 28
+expression: "component MyComponent {\n                let x = 5;\n                let y = 10;\n                let z = x + y;\n\n                if (z == 15) {\n                    return true;\n                } else {\n                    return false;\n                }\n            }"
+---
+[
+  {
+    "kind": {
+      "type": "Component"
+    },
+    "span": {
+      "start": 0,
+      "end": 9
+    }
+  },
+  {
+    "kind": {
+      "type": "Identifier",
+      "value": {
+        "name": "MyComponent"
+      }
+    },
+    "span": {
+      "start": 10,
+      "end": 21
+    }
+  },
+  {
+    "kind": {
+      "type": "LBrace"
+    },
+    "span": {
+      "start": 22,
+      "end": 23
+    }
+  },
+  {
+    "kind": {
+      "type": "Let"
+    },
+    "span": {
+      "start": 40,
+      "end": 43
+    }
+  },
+  {
+    "kind": {
+      "type": "Identifier",
+      "value": {
+        "name": "x"
+      }
+    },
+    "span": {
+      "start": 44,
+      "end": 45
+    }
+  },
+  {
+    "kind": {
+      "type": "Assign"
+    },
+    "span": {
+      "start": 46,
+      "end": 47
+    }
+  },
+  {
+    "kind": {
+      "type": "Integer",
+      "value": 5
+    },
+    "span": {
+      "start": 48,
+      "end": 49
+    }
+  },
+  {
+    "kind": {
+      "type": "SemiColon"
+    },
+    "span": {
+      "start": 49,
+      "end": 50
+    }
+  },
+  {
+    "kind": {
+      "type": "Let"
+    },
+    "span": {
+      "start": 67,
+      "end": 70
+    }
+  },
+  {
+    "kind": {
+      "type": "Identifier",
+      "value": {
+        "name": "y"
+      }
+    },
+    "span": {
+      "start": 71,
+      "end": 72
+    }
+  },
+  {
+    "kind": {
+      "type": "Assign"
+    },
+    "span": {
+      "start": 73,
+      "end": 74
+    }
+  },
+  {
+    "kind": {
+      "type": "Integer",
+      "value": 10
+    },
+    "span": {
+      "start": 75,
+      "end": 77
+    }
+  },
+  {
+    "kind": {
+      "type": "SemiColon"
+    },
+    "span": {
+      "start": 77,
+      "end": 78
+    }
+  },
+  {
+    "kind": {
+      "type": "Let"
+    },
+    "span": {
+      "start": 95,
+      "end": 98
+    }
+  },
+  {
+    "kind": {
+      "type": "Identifier",
+      "value": {
+        "name": "z"
+      }
+    },
+    "span": {
+      "start": 99,
+      "end": 100
+    }
+  },
+  {
+    "kind": {
+      "type": "Assign"
+    },
+    "span": {
+      "start": 101,
+      "end": 102
+    }
+  },
+  {
+    "kind": {
+      "type": "Identifier",
+      "value": {
+        "name": "x"
+      }
+    },
+    "span": {
+      "start": 103,
+      "end": 104
+    }
+  },
+  {
+    "kind": {
+      "type": "Plus"
+    },
+    "span": {
+      "start": 105,
+      "end": 106
+    }
+  },
+  {
+    "kind": {
+      "type": "Identifier",
+      "value": {
+        "name": "y"
+      }
+    },
+    "span": {
+      "start": 107,
+      "end": 108
+    }
+  },
+  {
+    "kind": {
+      "type": "SemiColon"
+    },
+    "span": {
+      "start": 108,
+      "end": 109
+    }
+  },
+  {
+    "kind": {
+      "type": "If"
+    },
+    "span": {
+      "start": 127,
+      "end": 129
+    }
+  },
+  {
+    "kind": {
+      "type": "LParen"
+    },
+    "span": {
+      "start": 130,
+      "end": 131
+    }
+  },
+  {
+    "kind": {
+      "type": "Identifier",
+      "value": {
+        "name": "z"
+      }
+    },
+    "span": {
+      "start": 131,
+      "end": 132
+    }
+  },
+  {
+    "kind": {
+      "type": "Equal"
+    },
+    "span": {
+      "start": 134,
+      "end": 135
+    }
+  },
+  {
+    "kind": {
+      "type": "Integer",
+      "value": 15
+    },
+    "span": {
+      "start": 136,
+      "end": 138
+    }
+  },
+  {
+    "kind": {
+      "type": "RParen"
+    },
+    "span": {
+      "start": 138,
+      "end": 139
+    }
+  },
+  {
+    "kind": {
+      "type": "LBrace"
+    },
+    "span": {
+      "start": 140,
+      "end": 141
+    }
+  },
+  {
+    "kind": {
+      "type": "Return"
+    },
+    "span": {
+      "start": 162,
+      "end": 168
+    }
+  },
+  {
+    "kind": {
+      "type": "True"
+    },
+    "span": {
+      "start": 169,
+      "end": 173
+    }
+  },
+  {
+    "kind": {
+      "type": "SemiColon"
+    },
+    "span": {
+      "start": 173,
+      "end": 174
+    }
+  },
+  {
+    "kind": {
+      "type": "RBrace"
+    },
+    "span": {
+      "start": 191,
+      "end": 192
+    }
+  },
+  {
+    "kind": {
+      "type": "Else"
+    },
+    "span": {
+      "start": 193,
+      "end": 197
+    }
+  },
+  {
+    "kind": {
+      "type": "LBrace"
+    },
+    "span": {
+      "start": 198,
+      "end": 199
+    }
+  },
+  {
+    "kind": {
+      "type": "Return"
+    },
+    "span": {
+      "start": 220,
+      "end": 226
+    }
+  },
+  {
+    "kind": {
+      "type": "False"
+    },
+    "span": {
+      "start": 227,
+      "end": 232
+    }
+  },
+  {
+    "kind": {
+      "type": "SemiColon"
+    },
+    "span": {
+      "start": 232,
+      "end": 233
+    }
+  },
+  {
+    "kind": {
+      "type": "RBrace"
+    },
+    "span": {
+      "start": 250,
+      "end": 251
+    }
+  },
+  {
+    "kind": {
+      "type": "RBrace"
+    },
+    "span": {
+      "start": 264,
+      "end": 265
+    }
+  },
+  {
+    "kind": {
+      "type": "EOF"
+    },
+    "span": {
+      "start": 265,
+      "end": 266
+    }
+  }
+]
