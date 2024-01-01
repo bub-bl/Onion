@@ -8,12 +8,6 @@ pub struct Token {
     pub span: Span,
 }
 
-#[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
-pub struct Span {
-    pub start: usize,
-    pub end: usize,
-}
-
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
@@ -22,6 +16,12 @@ impl fmt::Display for Token {
             self.span.start, self.span.end, self.kind
         )
     }
+}
+
+#[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
 }
 
 #[derive(Clone, Debug, Eq, Hash, Ord, Serialize, Deserialize, PartialOrd, PartialEq)]
@@ -69,21 +69,7 @@ pub enum TokenKind {
     If,
     Else,
     Return,
-}
-
-pub fn lookup_identifier(identifier: &str) -> TokenKind {
-    match identifier {
-        "fn" => TokenKind::Function,
-        "let" => TokenKind::Let,
-        "true" => TokenKind::True,
-        "false" => TokenKind::False,
-        "if" => TokenKind::If,
-        "else" => TokenKind::Else,
-        "return" => TokenKind::Return,
-        _ => TokenKind::Identifier {
-            name: identifier.to_string(),
-        },
-    }
+    Component,
 }
 
 impl fmt::Display for TokenKind {
@@ -117,9 +103,26 @@ impl fmt::Display for TokenKind {
             TokenKind::If => write!(f, "if"),
             TokenKind::Else => write!(f, "else"),
             TokenKind::Return => write!(f, "return"),
+            TokenKind::Component => write!(f, "component"),
             TokenKind::ILLEGAL => write!(f, "ILLEGAL"),
             TokenKind::EOF => write!(f, "EOF"),
             TokenKind::Colon => write!(f, ":"),
         }
+    }
+}
+
+pub fn lookup_identifier(identifier: &str) -> TokenKind {
+    match identifier {
+        "fn" => TokenKind::Function,
+        "let" => TokenKind::Let,
+        "true" => TokenKind::True,
+        "false" => TokenKind::False,
+        "if" => TokenKind::If,
+        "else" => TokenKind::Else,
+        "return" => TokenKind::Return,
+        "component" => TokenKind::Component,
+        _ => TokenKind::Identifier {
+            name: identifier.to_string(),
+        },
     }
 }

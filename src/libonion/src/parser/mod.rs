@@ -1,14 +1,17 @@
 use crate::lexer::token::{Span, Token, TokenKind};
 use crate::lexer::Lexer;
-use crate::parser::ast::{
-    Array, BinaryExpression, BlockStatement, Boolean, Expression, FunctionCall,
-    FunctionDeclaration, Hash, Identifier, If, Index, Integer, Let, Literal, Node, Program,
-    ReturnStatement, Statement, StringType, UnaryExpression,
-};
 use crate::parser::precedences::{get_token_precedence, Precedence};
+use crate::parser::declaration::*;
+
+use self::ast::{Program, StringType, Boolean, Integer, Identifier, Array, FunctionDeclaration, FunctionCall, Index, Node, Literal, If, Hash};
+use self::expression::{Expression, UnaryExpression, BinaryExpression};
+use self::statement::{Statement, BlockStatement, LetStatement, ReturnStatement};
 
 pub mod ast;
-mod precedences;
+pub mod expression;
+pub mod precedences;
+pub mod statement;
+pub mod declaration;
 mod tests;
 
 type ParseError = String;
@@ -70,13 +73,19 @@ impl<'a> Parser<'a> {
 
     pub fn parse_program(&mut self) -> Result<Program, ParseErrors> {
         let mut program = Program::new();
+
         while !self.current_token_is(&TokenKind::EOF) {
-            match self.parse_statement() {
-                Ok(stmt) => program.body.push(stmt),
+            // match self.parse_statement() {
+            //     Ok(stmt) => program.body.push(stmt),
+            //     Err(e) => self.errors.push(e),
+            // }
+            match self.parse_declaration() {
+                Ok(decl) => program.body.push(decl),
                 Err(e) => self.errors.push(e),
             }
             self.next_token();
         }
+
         program.span.end = self.current_token.span.end;
 
         if self.errors.is_empty() {
@@ -92,6 +101,58 @@ impl<'a> Parser<'a> {
             TokenKind::Return => self.parse_return_statement(),
             _ => self.parse_expression_statement(),
         }
+    }
+
+    fn parse_declaration(&mut self) -> Result<Declaration, ParseError> {
+        match self.current_token.kind {
+            TokenKind::Component => self.parse_component_declaration(),
+            _ => Err("expected declaration".to_string()),
+        }
+    }
+
+    fn parse_component_declaration(&mut self) -> Result<Declaration, ParseError> {
+        let start = self.current_token.span.start;
+        self.next_token();
+
+        let mut block_statement = Vec::new();
+        let name = self.current_token.clone();
+        let mut identifier_name = "".to_string();
+        
+        match &self.current_token.kind {
+            TokenKind::Identifier { name } => {
+                identifier_name = name.to_string();
+            }
+            _ => return Err(format!("{} not an identifier", self.current_token)),
+        };
+
+        while !self.current_token_is(&TokenKind::RBrace) && !self.current_token_is(&TokenKind::EOF)
+        {
+            if let Ok(statement) = self.parse_statement() {
+                block_statement.push(statement)
+            }
+
+            self.next_token();
+        }
+
+        // self.expect_peek(&TokenKind::LBrace)?;
+        // self.next_token();
+
+        // let consequent = self.parse_block_statement()?;
+
+        // if self.peek_token_is(&TokenKind::RBrace) {
+        //     self.next_token();
+        // }
+
+        let end = self.current_token.span.end;
+
+        return Ok(Declaration::Component(ComponentDeclaration {
+            name,
+            body: BlockStatement {
+                body: block_statement,
+                span: Span { start, end },
+            },
+            span: Span { start, end },
+        }));
     }
 
     fn parse_let_statement(&mut self) -> Result<Statement, ParseError> {
@@ -124,7 +185,7 @@ impl<'a> Parser<'a> {
 
         let end = self.current_token.span.end;
 
-        return Ok(Statement::Let(Let {
+        return Ok(Statement::Let(LetStatement {
             identifier: name,
             expr: value,
             span: Span { start, end },

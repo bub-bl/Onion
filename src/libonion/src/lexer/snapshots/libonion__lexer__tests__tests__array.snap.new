@@ -1,6 +1,6 @@
 ---
 source: libonion/src/lexer/tests.rs
-assertion_line: 25
+assertion_line: 28
 expression: "[3]"
 ---
 [

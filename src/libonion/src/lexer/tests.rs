@@ -6,8 +6,10 @@ mod tests {
 
     fn test_token_set(l: &mut Lexer) -> Vec<Token> {
         let mut token_vs: Vec<Token> = vec![];
+
         loop {
             let t = l.next_token();
+
             if t.kind == TokenKind::EOF {
                 token_vs.push(t);
                 break;
@@ -15,6 +17,7 @@ mod tests {
                 token_vs.push(t);
             }
         }
+        
         token_vs
     }
 
@@ -28,6 +31,11 @@ mod tests {
             input
         );
     }
+
+    #[test]
+    fn test_lexer_component() {{
+        test_lexer_common("component", "component Test{}");
+    }}
 
     #[test]
     fn test_lexer_simple() {

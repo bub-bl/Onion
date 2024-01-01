@@ -1,21 +1,25 @@
 use libonion::lexer::token::{Token, TokenKind};
-use libonion::object::builtins::BuiltIns;
+use libonion::object::builtins::BUILTINS;
 use libonion::object::environment::{Env, Environment};
 use libonion::object::object::{EvalError, Object};
 use libonion::parser::ast::{
-    Array, BinaryExpression, Boolean, Expression, FunctionCall, FunctionDeclaration, Hash,
-    Identifier, If, Index, Integer, Let, Literal, Node, ReturnStatement, Statement, StringType,
-    UnaryExpression,
+    Array, Boolean, FunctionCall, FunctionDeclaration, Hash,
+    Identifier, If, Index, Integer, Literal, Node, StringType,
 };
+use libonion::parser::declaration::Declaration;
+use libonion::parser::expression::{Expression, UnaryExpression, BinaryExpression};
+use libonion::parser::statement::{Statement, ReturnStatement, LetStatement};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 pub fn eval(node: Node, env: &Env) -> Result<Rc<Object>, EvalError> {
     match node {
-        Node::Program(p) => eval_block_statements(&p.body, env),
+        // Node::Program(p) => eval_block_statements(&p.body, env),
+        Node::Program(p) => eval_block_declarations(&p.body, env),
         Node::Statement(statements) => eval_statement(&statements, env),
         Node::Expression(expression) => eval_expression(&expression, env),
+        Node::Declaration(declaration) => eval_declaration(&declaration, env),
     }
 }
 
@@ -34,6 +38,30 @@ fn eval_block_statements(statements: &Vec<Statement>, env: &Env) -> Result<Rc<Ob
     return Ok(result);
 }
 
+fn eval_block_declarations(declarations: &Vec<Declaration>, env: &Env) -> Result<Rc<Object>, EvalError> {
+    let mut result = Rc::new(Object::Null);
+    for decl in declarations {
+        let val = eval_declaration(decl, &Rc::clone(env))?;
+        match *val {
+            Object::ReturnValue(_) => return Ok(val),
+            _ => {
+                result = val;
+            }
+        }
+    }
+
+    return Ok(result);
+}
+
+fn eval_declaration(declaration: &Declaration, env: &Env) -> Result<Rc<Object>, EvalError> {
+    match declaration {
+        Declaration::Component(decl) => {
+            let statements = &decl.body.body;
+            eval_block_statements(&statements, env)
+        }
+    }
+}
+
 fn eval_statement(statement: &Statement, env: &Env) -> Result<Rc<Object>, EvalError> {
     match statement {
         Statement::Expr(expr) => eval_expression(expr, env),
@@ -41,7 +69,7 @@ fn eval_statement(statement: &Statement, env: &Env) -> Result<Rc<Object>, EvalEr
             let val = eval_expression(argument, env)?;
             return Ok(Rc::new(Object::ReturnValue(val)));
         }
-        Statement::Let(Let {
+        Statement::Let(LetStatement {
             identifier: id,
             expr,
             ..
@@ -181,7 +209,7 @@ fn eval_expressions(exprs: &Vec<Expression>, env: &Env) -> Result<Vec<Rc<Object>
 fn eval_identifier(identifier: &str, env: &Env) -> Result<Rc<Object>, EvalError> {
     match env.borrow().get(identifier) {
         Some(obj) => Ok(obj.clone()),
-        None => match BuiltIns.iter().find(|&&b| b.0 == identifier) {
+        None => match BUILTINS.iter().find(|&&b| b.0 == identifier) {
             Some(obj) => Ok(Rc::new(Object::Builtin(obj.1))),
             None => Err(format!("unknown identifier {}", identifier)),
         },

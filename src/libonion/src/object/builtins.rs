@@ -3,7 +3,7 @@ use lazy_static::lazy_static;
 use std::rc::Rc;
 
 lazy_static! {
-    pub static ref BuiltIns: Vec<(&'static str, BuiltinFunc)> = vec![
+    pub static ref BUILTINS: Vec<(&'static str, BuiltinFunc)> = vec![
         ("len", len),
         ("puts", puts),
         ("first", first),
@@ -27,6 +27,7 @@ pub fn len(args: Vec<Rc<Object>>) -> Rc<Object> {
             args.len()
         )));
     }
+    
     Rc::from(match &*args[0] {
         Object::String(s) => Object::Integer(s.len() as i64),
         Object::Array(a) => Object::Integer(a.len() as i64),

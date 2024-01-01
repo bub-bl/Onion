@@ -1,8 +1,9 @@
 use crate::object::environment::Env;
-use crate::parser::ast::{BlockStatement, Identifier};
+use crate::parser::ast::Identifier;
+use crate::parser::statement::BlockStatement;
 use std::collections::HashMap;
 use std::fmt;
-use std::fmt::{write, Formatter};
+use std::fmt::Formatter;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 
