@@ -5,7 +5,7 @@ use serde::{Serialize, Deserialize};
 use crate::lexer::token::{Token, Span, TokenKind};
 use crate::parser::ast::format_statements;
 
-use super::statement::{Statement, BlockStatement};
+use super::statement::BlockStatement;
 
 #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
 #[serde(untagged)]

@@ -15,9 +15,11 @@ use std::rc::Rc;
 
 pub fn eval(node: Node, env: &Env) -> Result<Rc<Object>, EvalError> {
     match node {
-        Node::Program(p) => eval_block_statements(&p.body, env),
+        // Node::Program(p) => eval_block_statements(&p.body, env),
+        Node::Program(p) => eval_block_declarations(&p.body, env),
         Node::Statement(statements) => eval_statement(&statements, env),
         Node::Expression(expression) => eval_expression(&expression, env),
+        Node::Declaration(declaration) => eval_declaration(&declaration, env),
     }
 }
 
@@ -59,8 +61,24 @@ fn eval_statement(statement: &Statement, env: &Env) -> Result<Rc<Object>, EvalEr
 
             Ok(Rc::new(Object::Null))
         }
-        Statement::Declaration(decl) => eval_declaration(decl, env),
     }
+}
+
+fn eval_block_declarations(declarations: &Vec<Declaration>, env: &Env) -> Result<Rc<Object>, EvalError> {
+    let mut result = Rc::new(Object::Null);
+
+    for decl in declarations {
+        let val = eval_declaration(decl, &Rc::clone(env))?;
+
+        match *val {
+            Object::ReturnValue(_) => return Ok(val),
+            _ => {
+                result = val;
+            }
+        }
+    }
+
+    return Ok(result);
 }
 
 fn eval_declaration(decl: &Declaration, env: &Env) -> Result<Rc<Object>, EvalError> {

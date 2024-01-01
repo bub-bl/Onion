@@ -14,7 +14,6 @@ pub enum Statement {
     Let(LetStatement),
     Return(ReturnStatement),
     Expr(Expression),
-    Declaration(Declaration),
 }
 
 #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
@@ -62,7 +61,6 @@ impl fmt::Display for Statement {
                 write!(f, "return {};", argument)
             }
             Statement::Expr(expr) => write!(f, "{}", expr),
-            Statement::Declaration(d) => write!(f, "{}", d),
         }
     }
 }

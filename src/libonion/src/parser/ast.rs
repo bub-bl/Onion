@@ -4,7 +4,7 @@ use core::fmt::Result;
 use serde::{Deserialize, Serialize};
 use std::fmt::Formatter;
 
-use super::{expression::Expression, statement::{Statement, BlockStatement}};
+use super::{expression::Expression, statement::{Statement, BlockStatement}, declaration::Declaration};
 
 // still wait for https://github.com/serde-rs/serde/issues/1402
 #[derive(Clone, Debug, Serialize, Deserialize, Eq, Hash, PartialEq)]
@@ -12,6 +12,7 @@ pub enum Node {
     Program(Program),
     Statement(Statement),
     Expression(Expression),
+    Declaration(Declaration),
 }
 
 impl fmt::Display for Node {
@@ -20,6 +21,7 @@ impl fmt::Display for Node {
             Node::Program(p) => write!(f, "{}", p),
             Node::Statement(stmt) => write!(f, "{}", stmt),
             Node::Expression(expr) => write!(f, "{}", expr),
+            Node::Declaration(decl) => write!(f, "{}", decl),
         }
     }
 }
@@ -27,7 +29,7 @@ impl fmt::Display for Node {
 #[derive(Clone, Debug, Eq, Serialize, Deserialize, Hash, PartialEq)]
 #[serde(tag = "type")]
 pub struct Program {
-    pub body: Vec<Statement>,
+    pub body: Vec<Declaration>,
     pub span: Span,
 }
 
@@ -42,7 +44,7 @@ impl Program {
 
 impl fmt::Display for Program {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        write!(f, "{}", format_statements(&self.body))
+        write!(f, "{}", format_declarations(&self.body))
     }
 }
 
@@ -163,6 +165,14 @@ pub(crate) fn format_expressions(exprs: &Vec<Expression>) -> String {
 }
 
 pub(crate) fn format_statements(statements: &Vec<Statement>) -> String {
+    return statements
+        .iter()
+        .map(|stmt| stmt.to_string())
+        .collect::<Vec<String>>()
+        .join("");
+}
+
+pub(crate) fn format_declarations(statements: &Vec<Declaration>) -> String {
     return statements
         .iter()
         .map(|stmt| stmt.to_string())

@@ -16,9 +16,20 @@ fn main() {
     // }";
 
     let input = "
+    component User {
+        let age = 26;
+
+        if(age < 30) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     component Position {
         let x = 5;
         let y = 10;
+
         return x + y;
     }
     ";
