@@ -111,7 +111,6 @@ impl<'a> Parser<'a> {
         let start = self.current_token.span.start;
         self.next_token();
 
-        let mut block_statement = Vec::new();
         let name = self.current_token.clone();
         let mut identifier_name = "".to_string();
         
@@ -124,30 +123,12 @@ impl<'a> Parser<'a> {
 
         self.next_token();
 
-        while !self.current_token_is(&TokenKind::RBrace) && !self.current_token_is(&TokenKind::EOF)
-        {
-            if let Ok(statement) = self.parse_statement() {
-                block_statement.push(statement)
-            }
-
-            self.next_token();
-        }
-
-        // self.expect_peek(&TokenKind::LBrace)?;
-        // self.next_token();
-
-        // let consequent = self.parse_block_statement()?;
-
-        // if self.peek_token_is(&TokenKind::RBrace) {
-        //     self.next_token();
-        // }
-
+        let component_body = self.parse_block_statement()?;
         let end = self.current_token.span.end;
-        println!("body: {:?}", block_statement);
 
         return Ok(Statement::Declaration(Declaration::Component(ComponentDeclaration {
             name,
-            body: block_statement,
+            body: component_body,
             span: Span { start, end },
         })));
     }
@@ -170,7 +151,7 @@ impl<'a> Parser<'a> {
         self.next_token();
 
         let mut value = self.parse_expression(Precedence::Lowest)?.0;
-
+        
         match value {
             Expression::Function(ref mut f) => {
                 f.name = identifier_name;

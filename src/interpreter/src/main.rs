@@ -2,7 +2,6 @@ use crate::evaluator::eval;
 use libonion::object::environment::Env;
 use libonion::parser::parse;
 use std::cell::RefCell;
-use std::io::stdin;
 use std::rc::Rc;
 
 mod evaluator;
@@ -19,6 +18,8 @@ fn main() {
     let input = "
     component Position {
         let x = 5;
+        let y = 10;
+        return x + y;
     }
     ";
 

@@ -39,8 +39,6 @@ fn eval_block_statements(statements: &Vec<Statement>, env: &Env) -> Result<Rc<Ob
 }
 
 fn eval_statement(statement: &Statement, env: &Env) -> Result<Rc<Object>, EvalError> {
-    println!("eval_statement: {:?}", statement);
-
     match statement {
         Statement::Expr(expr) => eval_expression(expr, env),
         Statement::Return(ReturnStatement { argument, .. }) => {
@@ -70,7 +68,7 @@ fn eval_declaration(decl: &Declaration, env: &Env) -> Result<Rc<Object>, EvalErr
         Declaration::Component(ComponentDeclaration {
             body, ..
         }) => {
-            eval_block_statements(body, env)
+            eval_block_statements(&body.body, env)
         },
     }
 }
