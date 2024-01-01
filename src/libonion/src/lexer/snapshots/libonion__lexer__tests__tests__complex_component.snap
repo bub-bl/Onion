@@ -1,6 +1,5 @@
 ---
 source: libonion/src/lexer/tests.rs
-assertion_line: 28
 expression: "component MyComponent {\n                let x = 5;\n                let y = 10;\n                let z = x + y;\n\n                if (z == 15) {\n                    return true;\n                } else {\n                    return false;\n                }\n            }"
 ---
 [

@@ -1,47 +1,45 @@
 ---
 source: libonion/src/lexer/tests.rs
-assertion_line: 28
-expression: let x = 5
+expression: "component Test{}"
 ---
 [
   {
     "kind": {
-      "type": "Let"
+      "type": "Component"
     },
     "span": {
       "start": 0,
-      "end": 3
+      "end": 9
     }
   },
   {
     "kind": {
       "type": "Identifier",
       "value": {
-        "name": "x"
+        "name": "Test"
       }
     },
     "span": {
-      "start": 4,
-      "end": 5
+      "start": 10,
+      "end": 14
     }
   },
   {
     "kind": {
-      "type": "Assign"
+      "type": "LBrace"
     },
     "span": {
-      "start": 6,
-      "end": 7
+      "start": 14,
+      "end": 15
     }
   },
   {
     "kind": {
-      "type": "Integer",
-      "value": 5
+      "type": "RBrace"
     },
     "span": {
-      "start": 8,
-      "end": 9
+      "start": 15,
+      "end": 16
     }
   },
   {
@@ -49,8 +47,8 @@ expression: let x = 5
       "type": "EOF"
     },
     "span": {
-      "start": 9,
-      "end": 10
+      "start": 16,
+      "end": 17
     }
   }
 ]

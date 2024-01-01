@@ -5,7 +5,7 @@ expression: let x=5
 [
   {
     "kind": {
-      "Identifier": "let"
+      "type": "Let"
     },
     "span": {
       "start": 0,
@@ -14,7 +14,10 @@ expression: let x=5
   },
   {
     "kind": {
-      "Identifier": "x"
+      "type": "Identifier",
+      "value": {
+        "name": "x"
+      }
     },
     "span": {
       "start": 4,
@@ -22,7 +25,9 @@ expression: let x=5
     }
   },
   {
-    "kind": "Assign",
+    "kind": {
+      "type": "Assign"
+    },
     "span": {
       "start": 5,
       "end": 6
@@ -30,7 +35,8 @@ expression: let x=5
   },
   {
     "kind": {
-      "Integer": 5
+      "type": "Integer",
+      "value": 5
     },
     "span": {
       "start": 6,
@@ -38,7 +44,9 @@ expression: let x=5
     }
   },
   {
-    "kind": "EOF",
+    "kind": {
+      "type": "EOF"
+    },
     "span": {
       "start": 7,
       "end": 8
