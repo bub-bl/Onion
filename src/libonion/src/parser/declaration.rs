@@ -23,12 +23,6 @@ pub struct ComponentDeclaration {
     pub span: Span,
 }
 
-pub struct BlockDeclaration {
-    pub name: Token,
-    pub body: Vec<Statement>,
-    pub span: Span,
-}
-
 impl fmt::Display for Declaration {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         match self {

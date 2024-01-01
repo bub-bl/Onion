@@ -122,6 +122,8 @@ impl<'a> Parser<'a> {
             _ => return Err(format!("{} not an identifier", self.current_token)),
         };
 
+        self.next_token();
+
         while !self.current_token_is(&TokenKind::RBrace) && !self.current_token_is(&TokenKind::EOF)
         {
             if let Ok(statement) = self.parse_statement() {
@@ -168,6 +170,7 @@ impl<'a> Parser<'a> {
         self.next_token();
 
         let mut value = self.parse_expression(Precedence::Lowest)?.0;
+
         match value {
             Expression::Function(ref mut f) => {
                 f.name = identifier_name;

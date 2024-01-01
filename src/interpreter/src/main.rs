@@ -18,7 +18,7 @@ fn main() {
 
     let input = "
     component Position {
-
+        let x = 5;
     }
     ";
 

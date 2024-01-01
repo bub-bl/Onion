@@ -28,7 +28,6 @@ impl fmt::Display for Node {
 #[serde(tag = "type")]
 pub struct Program {
     pub body: Vec<Statement>,
-    // pub body: Vec<Declaration>,
     pub span: Span,
 }
 
