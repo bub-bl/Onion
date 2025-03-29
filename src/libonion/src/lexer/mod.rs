@@ -54,6 +54,7 @@ impl<'a> Lexer<'a> {
         // println!("self ch {}, position {} read_position {}", self.ch, self.position, self.read_position);
         self.skip_whitespace();
         self.skip_comments();
+
         let t = match self.ch {
             '=' => {
                 if self.peek_char() == '=' {
@@ -89,6 +90,7 @@ impl<'a> Lexer<'a> {
             '\u{0}' => TokenKind::EOF,
             '"' => {
                 let (start, end, string) = self.read_string();
+
                 return Token {
                     span: Span { start, end },
                     kind: TokenKind::String(string),
@@ -97,12 +99,14 @@ impl<'a> Lexer<'a> {
             _ => {
                 if is_letter(self.ch) {
                     let (start, end, identifier) = self.read_identifier();
+
                     return Token {
                         span: Span { start, end },
                         kind: lookup_identifier(&identifier),
                     };
                 } else if is_digit(self.ch) {
                     let (start, end, num) = self.read_number();
+
                     return Token {
                         span: Span { start, end },
                         kind: TokenKind::Integer(num),
@@ -114,6 +118,7 @@ impl<'a> Lexer<'a> {
         };
 
         self.read_char();
+
         return Token {
             span: Span {
                 start: self.position - 1,
@@ -133,8 +138,10 @@ impl<'a> Lexer<'a> {
         if self.ch == '/' && self.peek_char() == '/' {
             self.read_char();
             self.read_char();
+
             loop {
                 self.read_char();
+
                 if self.ch == '\n' || self.ch == '\u{0}' {
                     // consume the comments end
                     if self.ch == '\n' {
@@ -148,6 +155,7 @@ impl<'a> Lexer<'a> {
 
     fn read_identifier(&mut self) -> (usize, usize, String) {
         let pos = self.position;
+
         while is_letter(self.ch) {
             self.read_char();
         }
@@ -158,17 +166,18 @@ impl<'a> Lexer<'a> {
 
     fn read_number(&mut self) -> (usize, usize, i64) {
         let pos = self.position;
+
         while is_digit(self.ch) {
             self.read_char();
         }
 
         let x = self.input[pos..self.position].parse().unwrap();
-
         return (pos, self.position, x);
     }
 
     fn read_string(&mut self) -> (usize, usize, String) {
         let pos = self.position + 1;
+
         loop {
             self.read_char();
             if self.ch == '"' || self.ch == '\u{0}' {
@@ -182,6 +191,7 @@ impl<'a> Lexer<'a> {
         if self.ch == '"' {
             self.read_char();
         }
+
         return (pos - 1, self.position, x);
     }
 }

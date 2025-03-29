@@ -13,7 +13,7 @@ mod tests {
     #[test]
     fn parse_component_statement() {
         let component_tests = [
-            ("component Test{}", "component Test {}"),
+            ("decl Test{}", "decl Test {}"),
         ];
 
         verify_program(&component_tests);

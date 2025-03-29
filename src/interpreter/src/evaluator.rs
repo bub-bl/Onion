@@ -6,20 +6,19 @@ use libonion::parser::ast::{
     Array, Boolean, FunctionCall, FunctionDeclaration, Hash,
     Identifier, If, Index, Integer, Literal, Node, StringType,
 };
-use libonion::parser::declaration::{Declaration, ComponentDeclaration};
 use libonion::parser::expression::{Expression, UnaryExpression, BinaryExpression};
-use libonion::parser::statement::{Statement, ReturnStatement, LetStatement};
+use libonion::parser::statement::{Statement, ReturnStatement, LetStatement, Declaration};
 use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
 
 pub fn eval(node: Node, env: &Env) -> Result<Rc<Object>, EvalError> {
     match node {
-        // Node::Program(p) => eval_block_statements(&p.body, env),
-        Node::Program(p) => eval_block_declarations(&p.body, env),
+        Node::Program(p) => eval_block_statements(&p.body, env),
+        // Node::Program(p) => eval_block_declarations(&p.body, env),
         Node::Statement(statements) => eval_statement(&statements, env),
         Node::Expression(expression) => eval_expression(&expression, env),
-        Node::Declaration(declaration) => eval_declaration(&declaration, env),
+        // Node::Declaration(declaration) => eval_declaration(&declaration, env),
     }
 }
 
@@ -61,34 +60,37 @@ fn eval_statement(statement: &Statement, env: &Env) -> Result<Rc<Object>, EvalEr
 
             Ok(Rc::new(Object::Null))
         }
+        Statement::Decl(decl) => eval_declaration(decl, env),
     }
 }
 
-fn eval_block_declarations(declarations: &Vec<Declaration>, env: &Env) -> Result<Rc<Object>, EvalError> {
-    let mut result = Rc::new(Object::Null);
+// fn eval_block_declarations(declarations: &Vec<Declaration>, env: &Env) -> Result<Rc<Object>, EvalError> {
+//     let mut result = Rc::new(Object::Null);
 
-    for decl in declarations {
-        let val = eval_declaration(decl, &Rc::clone(env))?;
+//     for decl in declarations {
+//         let val = eval_declaration(decl, &Rc::clone(env))?;
 
-        match *val {
-            Object::ReturnValue(_) => return Ok(val),
-            _ => {
-                result = val;
-            }
-        }
-    }
+//         match *val {
+//             Object::ReturnValue(_) => return Ok(val),
+//             _ => {
+//                 result = val;
+//             }
+//         }
+//     }
 
-    return Ok(result);
-}
+//     return Ok(result);
+// }
 
 fn eval_declaration(decl: &Declaration, env: &Env) -> Result<Rc<Object>, EvalError> {
-    match decl {
-        Declaration::Component(ComponentDeclaration {
-            body, ..
-        }) => {
-            eval_block_statements(&body.body, env)
-        },
-    }
+    eval_block_statements(&decl.body.body, env)
+
+    // match decl {
+    //     Declaration::Component(ComponentDeclaration {
+    //         body, ..
+    //     }) => {
+    //         eval_block_statements(&body.body, env)
+    //     },
+    // }
 }
 
 fn is_truthy(obj: &Object) -> bool {

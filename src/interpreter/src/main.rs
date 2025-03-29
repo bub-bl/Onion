@@ -16,7 +16,7 @@ fn main() {
     // }";
 
     let input = "
-    component User {
+    decl User {
         let age = 26;
 
         if(age < 30) {
@@ -26,7 +26,7 @@ fn main() {
         }
     }
 
-    component Position {
+    decl Position {
         let x = 5;
         let y = 10;
 
